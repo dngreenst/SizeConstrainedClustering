@@ -18,6 +18,11 @@ def generate_truncated_gaussian(horiz_size, vert_size, mean: float = 0.0, standa
     return gaussian
 
 
+def generate_negative_truncated_gaussian(horiz_size, vert_size, mean: float = 0.0, standard_deviation: float = 1.0)\
+        -> np.array:
+    return generate_truncated_gaussian(horiz_size, vert_size, mean, standard_deviation, min_size=0.0)
+
+
 class MatrixGenerationTester(unittest.TestCase):
 
     def test_generate_gaussian_matrix_shape(self):
@@ -171,6 +176,21 @@ class MatrixGenerationTester(unittest.TestCase):
         plt.show()
 
         gaussian_matrix = generate_truncated_gaussian(horiz, vert, max_size=2.0)
+
+        for i in range(horiz):
+            for j in range(vert):
+                res[i * vert + j] = gaussian_matrix[i, j]
+
+        plt.hist(res, bins=100)
+        plt.show()
+
+    def test_negative_truncated_gaussian_distribution(self):
+        horiz = 100
+        vert = 250
+
+        res = np.zeros(horiz * vert)
+
+        gaussian_matrix = generate_negative_truncated_gaussian(horiz, vert)
 
         for i in range(horiz):
             for j in range(vert):
