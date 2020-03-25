@@ -65,6 +65,34 @@ def calculate_data_loss(matrix: np.array, clusters: List[List[int]], lp_norm: fl
     return data_loss_size
 
 
+def block_matrix_calculate_data_loss(block_matrix: np.array, n: int, m: int, clusters: List[List[int]],
+                                     lp_norm: float = 1.0) -> float:
+    if n <= 0 or m <= 0:
+        raise RuntimeError(f'Expected n, m > 0, received n={n}, m={m}')
+
+    if len(block_matrix.shape) != 2 or block_matrix.shape[0] != block_matrix.shape[1] or block_matrix.shape[0] != n*m:
+        raise RuntimeError(f'Expected a square matrix made of m*m blocks.\n'
+                           f'block_matrix.shape={block_matrix.shape}\n'
+                           f'n*m={n*m}\n')
+
+    reduced_matrix = np.zeros((n, n))
+
+    for i in range(n):
+        for j in range(n):
+            submatrix_for_i_j = block_matrix[i * m: (i + 1) * m, j * m:(j + 1) * m]
+            reduced_matrix[i, j] = np.linalg.norm(submatrix_for_i_j.reshape(m**2), lp_norm)
+
+    return calculate_data_loss(reduced_matrix, clusters, 1.0)
+
+
+class TestBlockMatrixCalculateDataLoss(unittest.TestCase):
+
+    def test_calculate_data_loss_invalid_matrix_shape(self):
+        block_matrix = np.arange(16 ** 2).reshape(16, 16)
+
+        block_matrix_calculate_data_loss(block_matrix, 8, 2, [[1, 3, 5], [2, 4, 6], [7, 0]])
+
+
 class TestCalculateDataLoss(unittest.TestCase):
 
     def test_calculate_data_loss_invalid_matrix_shape(self):
