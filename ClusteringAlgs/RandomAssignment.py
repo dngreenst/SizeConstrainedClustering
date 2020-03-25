@@ -25,7 +25,7 @@ def random_permutation_clustering(block_matrix: np.array, n: int, m: int, max_cl
         if curr_cluster_size % max_cluster_size == 0:
             curr_cluster = list()
             clusters.append(curr_cluster)
-        curr_cluster.append(idx)
+        curr_cluster.append(int(idx))
         curr_cluster_size += 1
 
     return clusters
