@@ -2,10 +2,11 @@
 import unittest
 
 import numpy as np
-from typing import List
+from typing import List, Set
+from MatrixGenerators import ReducedMatrix
 
 
-def calculate_data_loss(matrix: np.array, clusters: List[List[int]], lp_norm: float = 1.0) -> float:
+def calculate_data_loss(matrix: np.array, clusters: List[Set[int]], lp_norm: float = 1.0) -> float:
 
     # Input validation
 
@@ -19,20 +20,13 @@ def calculate_data_loss(matrix: np.array, clusters: List[List[int]], lp_norm: fl
     # 3. The clusters are pairwise disjoint
     # 4. The union of the clusters covers the matrix row indices
     matrix_dimension = matrix.shape[0]
-    cluster_union = set()
-    sum_of_cluster_sizes = 0
-    for cluster in clusters:
-        sum_of_cluster_sizes += len(cluster)
-        for cluster_member in cluster:
-
-            if type(cluster_member) != int:
-                raise RuntimeError(f'Unexpected cluster member type - {cluster_member}, {type(cluster_member)}')
-
-            cluster_union.add(cluster_member)
-
+    cluster_union = set.union(*clusters)
+    sum_of_cluster_sizes = sum([len(cluster) for cluster in clusters])
+    for cluster_member in cluster_union:
+        if not isinstance(cluster_member, (int, np.integer)):
+            raise RuntimeError(f'Unexpected cluster member type - {cluster_member}, {type(cluster_member)}')
     if len(cluster_union) != sum_of_cluster_sizes:
         raise RuntimeError(f'Invalid clusters - the clusters intersect')
-
     if sum_of_cluster_sizes != matrix_dimension:
         raise RuntimeError(f'Clusters don\'t match matrix dimensions: size of cluster\'s cluster_union is '
                            f'{sum_of_cluster_sizes}, matrix dimension is {matrix_dimension}')
@@ -46,7 +40,7 @@ def calculate_data_loss(matrix: np.array, clusters: List[List[int]], lp_norm: fl
     # For each cluster C, create an indicator matrix, such that indicator[i, j] = 1 <==> i,j are C
     # Combine the indicator matrices to create a cumulative indicator matrix, such that
     # cumulative_indicator[i, j] = 1 <==> there is a cluster C in the provided clusters, such that i,j are in C
-
+    clusters = [list(cluster) for cluster in clusters]
     cumulative_indicator = np.zeros_like(matrix)
     for cluster in clusters:
         indicator_array = np.zeros(matrix_dimension)
@@ -65,7 +59,7 @@ def calculate_data_loss(matrix: np.array, clusters: List[List[int]], lp_norm: fl
     return data_loss_size
 
 
-def block_matrix_calculate_data_loss(block_matrix: np.array, n: int, m: int, clusters: List[List[int]],
+def block_matrix_calculate_data_loss(block_matrix: np.array, n: int, m: int, clusters: List[Set[int]],
                                      lp_norm: float = 1.0) -> float:
     if n <= 0 or m <= 0:
         raise RuntimeError(f'Expected n, m > 0, received n={n}, m={m}')
@@ -74,15 +68,7 @@ def block_matrix_calculate_data_loss(block_matrix: np.array, n: int, m: int, clu
         raise RuntimeError(f'Expected a square matrix made of m*m blocks.\n'
                            f'block_matrix.shape={block_matrix.shape}\n'
                            f'n*m={n*m}\n')
-
-    reduced_matrix = np.zeros((n, n))
-
-    for i in range(n):
-        for j in range(n):
-            submatrix_for_i_j = block_matrix[i * m: (i + 1) * m, j * m:(j + 1) * m]
-            reduced_matrix[i, j] = np.linalg.norm(submatrix_for_i_j.reshape(m**2), lp_norm)
-
-    return calculate_data_loss(reduced_matrix, clusters, 1.0)
+    return calculate_data_loss(ReducedMatrix.reduce_block_matrix(block_matrix, n, m, lp_norm), clusters, 1.0)
 
 
 class TestBlockMatrixCalculateDataLoss(unittest.TestCase):

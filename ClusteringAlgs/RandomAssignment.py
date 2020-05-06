@@ -2,10 +2,10 @@
 import unittest
 import numpy as np
 
-from typing import List
+from typing import List, Set
 
 
-def random_permutation_clustering(block_matrix: np.array, n: int, m: int, max_cluster_size: int) -> List[List[int]]:
+def random_permutation_clustering(block_matrix: np.array, n: int, m: int, max_cluster_size: int) -> List[Set[int]]:
 
     if n <= 0 or m <= 0:
         raise RuntimeError(f'Expected n, m > 0, received n={n}, m={m}')
@@ -23,12 +23,16 @@ def random_permutation_clustering(block_matrix: np.array, n: int, m: int, max_cl
 
     for idx in perm:
         if curr_cluster_size % max_cluster_size == 0:
-            curr_cluster = list()
+            curr_cluster = set()
             clusters.append(curr_cluster)
-        curr_cluster.append(int(idx))
+        curr_cluster.add(int(idx))
         curr_cluster_size += 1
 
     return clusters
+
+
+def random_permutation_clustering_from_matrix(matrix: np.array, max_cluster_size: int) -> List[Set[int]]:
+    return random_permutation_clustering(matrix, matrix.shape[0], 1, max_cluster_size)
 
 
 class RandomPermutationClusteringTester(unittest.TestCase):
