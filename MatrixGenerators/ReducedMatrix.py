@@ -14,7 +14,7 @@ def reduce_block_matrix(block_matrix: np.ndarray, n: int, m: {int, np.ndarray}, 
 
 
 def coarse_element(matrix: np.ndarray, cluster_a: {int, np.ndarray, tuple}, cluster_b: {int, np.ndarray, tuple},
-                   lp_norm: float) -> float:
+                   lp_norm: float = 1.0) -> float:
     indexes = np.array(np.meshgrid(cluster_a, cluster_b)).T.reshape(-1, 2)
     values = np.asarray([matrix[tuple(index)] for index in indexes])
     return np.linalg.norm(values.flatten(), lp_norm)

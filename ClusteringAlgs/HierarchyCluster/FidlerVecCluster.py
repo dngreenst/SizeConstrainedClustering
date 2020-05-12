@@ -1,12 +1,13 @@
 import networkx as nx
-import scipy.cluster.hierarchy as shc
+import scipy.cluster as sc
 import scipy.spatial.distance as ssd
 from typing import List, Set, Tuple
 import numpy as np
-
-import scipy.cluster as sc
+from anytree import Node, search
+from ClusteringAlgs.HierarchyCluster import TreeJoin
 
 ZERO = 0.00001
+
 
 def is_graph_connected(laplacian_eig_values: np.ndarray) -> bool:
     # graph is not connected if the second lowest eigenvalue of the laplacian matrix is 0
@@ -14,60 +15,62 @@ def is_graph_connected(laplacian_eig_values: np.ndarray) -> bool:
     return True if zero_eig_value_qty < 2 else False
 
 
+"""
+NOT TRUE
 def cluster_connected_components(eig_values: np.ndarray, eig_vectors: np.ndarray) -> List[Set[int]]:
     # eig_values and eig_vectors of the laplacian matrix of a disconnected graph
     zero_eig_value_indexes = np.flatnonzero(np.abs(eig_values) < ZERO)
-    zero_eig_value_vectors = eig_vectors[:,zero_eig_value_indexes].transpose()
+    zero_eig_value_vectors = eig_vectors[:, zero_eig_value_indexes].transpose()
     # clusters are made of nodes with nonzero values in the eig_vectors which eig_values are 0
     clusters = [set(np.flatnonzero(np.abs(v) > ZERO)) for v in zero_eig_value_vectors]
     return clusters
+"""
 
 
-def fidler_vector_connected_partition(fidler_vectors: np.ndarray, num_clusters: int, labels: np.ndarray) -> List[Set[int]]:
-    #fidler_vectors are the eigenvectors of the n smallest nonzero eigenvalues
+def agglomerative_partition(fidler_vectors: np.ndarray, num_clusters: int) -> List[int]:
     condensed_matrix_distance = ssd.pdist(fidler_vectors)
-    linkage_matrix = shc.linkage(condensed_matrix_distance, 'single')
-    cluster_assignment = shc.fcluster(linkage_matrix, num_clusters, criterion='maxclust')
-    #cluster_assignment starts labeling from 1
-    non_labeled_clusters = [np.flatnonzero(cluster_assignment == i) for i in np.arange(num_clusters)+1]
-    clusters = [set(labels[cluster]) for cluster in non_labeled_clusters]
-    return clusters
+    linkage_matrix = sc.hierarchy.linkage(condensed_matrix_distance, 'single')
+    assignment = sc.hierarchy.fcluster(linkage_matrix, num_clusters, criterion='maxclust')
+    return assignment
 
 
-def fidler_vector_partition(graph: nx.Graph, num_fidler_vectors: int = 1, num_clusters: int = 2) -> List[Set[int]]:
+def k_means_partition(fidler_vectors: np.ndarray, num_clusters: int) -> List[int]:
+    scaled_features = sc.vq.whiten(fidler_vectors)
+    centroid, assignment = sc.vq.kmeans2(data=scaled_features, k=num_clusters, iter=10, minit='++')
+    return assignment
+
+
+def fidler_vector_partition(graph: nx.Graph, method_function, num_fidler_vectors: int = 1, num_clusters: int = 2) -> List[Set[int]]:
     laplacian = nx.laplacian_matrix(graph).toarray()
     eig_values, eig_vectors = np.linalg.eig(laplacian)
     if is_graph_connected(eig_values):
-        #eigen_vectors (columns) sorted by smallest to biggest eigenvalue, first eigenvalue is 0
+        # eigen_vectors (columns) sorted by smallest to biggest eigenvalue, first eigenvalue is 0
         eig_vectors_sorted = eig_vectors[:, eig_values.argsort()]
+        # fidler_vectors are the eigenvectors of the n smallest nonzero eigenvalues
         fidler_vectors = eig_vectors_sorted[:, 1:num_fidler_vectors+1]
-        clusters = fidler_vector_connected_partition(fidler_vectors, num_clusters, np.asarray(graph.nodes))
+        assignment = method_function(fidler_vectors, num_clusters)
+        node_labels = np.asarray(graph.nodes)
+        non_labeled_clusters = [np.flatnonzero(assignment == i) for i in np.unique(assignment)]
+        clusters = [set(node_labels[cluster]) for cluster in non_labeled_clusters]
     else:
         clusters = [set(nx.subgraph(graph, g).nodes) for g in nx.connected_components(graph)]
     return clusters
 
 
-def fidler_cluster(matrix: np.array, cluster_size: int, num_fidler_vectors: int = 1, num_clusters: int = 2)\
-        -> List[Set[int]]:
-    graph: nx.Graph = nx.from_numpy_matrix(matrix)
-    subgraph_list = [graph]
-    while True:
-        next_subgraph_list = []
-        for subgraph in subgraph_list:
-            if subgraph.number_of_nodes() > cluster_size:
-                clusters = fidler_vector_partition(subgraph, num_fidler_vectors, num_clusters)
-                for cluster in clusters:
-                    next_subgraph_list.append(nx.subgraph(graph, cluster))
-            else:
-                next_subgraph_list.append(subgraph)
-        subgraph_list = next_subgraph_list
-        number_of_nodes = np.asarray([g.number_of_nodes() for g in subgraph_list])
-        if np.sum(number_of_nodes > cluster_size) == 0:
-            break
-    clusters = [set(subgraph.nodes) for subgraph in subgraph_list]
-    return clusters
-
-
+def fidler_cluster(matrix: np.ndarray, cluster_size: int, method_function,
+                   num_fidler_vectors: int = 1, num_clusters: int = 2) -> List[Set[int]]:
+    g: nx.Graph = nx.from_numpy_matrix(matrix)
+    root = Node("root", cluster=set(g.nodes))
+    # subgraph_list contains all nodes with size > cluster_size
+    node_list = [root] if len(root.cluster) > cluster_size else []
+    while node_list:
+        for node in node_list:
+            clusters = fidler_vector_partition(nx.subgraph(g, node.cluster), method_function, num_fidler_vectors, num_clusters)
+            next_list = [Node(str(i), parent=node, cluster=cluster) for i, cluster in enumerate(clusters, start=1)]
+            next_list = list(filter(lambda n: len(n.cluster) > cluster_size, next_list))
+        node_list = next_list
+    clusters = [node.cluster for node in root.leaves]
+    return TreeJoin.max_random_join(matrix, root, cluster_size, iter_num=100)
 
 
 
