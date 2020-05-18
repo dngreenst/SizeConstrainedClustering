@@ -15,18 +15,6 @@ def is_graph_connected(laplacian_eig_values: np.ndarray) -> bool:
     return True if zero_eig_value_qty < 2 else False
 
 
-"""
-NOT TRUE
-def cluster_connected_components(eig_values: np.ndarray, eig_vectors: np.ndarray) -> List[Set[int]]:
-    # eig_values and eig_vectors of the laplacian matrix of a disconnected graph
-    zero_eig_value_indexes = np.flatnonzero(np.abs(eig_values) < ZERO)
-    zero_eig_value_vectors = eig_vectors[:, zero_eig_value_indexes].transpose()
-    # clusters are made of nodes with nonzero values in the eig_vectors which eig_values are 0
-    clusters = [set(np.flatnonzero(np.abs(v) > ZERO)) for v in zero_eig_value_vectors]
-    return clusters
-"""
-
-
 def agglomerative_partition(fidler_vectors: np.ndarray, num_clusters: int) -> List[int]:
     condensed_matrix_distance = ssd.pdist(fidler_vectors)
     linkage_matrix = sc.hierarchy.linkage(condensed_matrix_distance, 'single')
@@ -57,20 +45,22 @@ def fidler_vector_partition(graph: nx.Graph, method_function, num_fidler_vectors
     return clusters
 
 
-def fidler_cluster(matrix: np.ndarray, cluster_size: int, method_function,
-                   num_fidler_vectors: int = 1, num_clusters: int = 2) -> List[Set[int]]:
+def fidler_cluster(matrix: np.ndarray, cluster_size: int, method_function, join_function=TreeJoin.join_tree,
+                   num_fidler_vectors: int = 1, num_clusters: int = 2, ) -> List[Set[int]]:
     g: nx.Graph = nx.from_numpy_matrix(matrix)
     root = Node("root", cluster=set(g.nodes))
     # subgraph_list contains all nodes with size > cluster_size
     node_list = [root] if len(root.cluster) > cluster_size else []
     while node_list:
+        next_list = []
         for node in node_list:
             clusters = fidler_vector_partition(nx.subgraph(g, node.cluster), method_function, num_fidler_vectors, num_clusters)
-            next_list = [Node(str(i), parent=node, cluster=cluster) for i, cluster in enumerate(clusters, start=1)]
-            next_list = list(filter(lambda n: len(n.cluster) > cluster_size, next_list))
+            next_list.extend([Node(str(i), parent=node, cluster=cluster) for i, cluster in enumerate(clusters, start=1)])
+            node.cluster.clear()
+        next_list = list(filter(lambda n: len(n.cluster) > cluster_size, next_list))
         node_list = next_list
     clusters = [node.cluster for node in root.leaves]
-    return TreeJoin.max_random_join(matrix, root, cluster_size, iter_num=100)
+    return clusters if join_function is None else join_function(matrix, root, cluster_size)
 
 
 

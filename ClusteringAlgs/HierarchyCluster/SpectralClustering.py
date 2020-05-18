@@ -1,9 +1,9 @@
 import networkx as nx
-import scipy.cluster as sc
-import scipy.spatial.distance as ssd
 from typing import List, Set, Tuple
 import numpy as np
 import sklearn.cluster as skc
+from anytree import Node, search
+from ClusteringAlgs.HierarchyCluster import TreeJoin
 
 
 ZERO = 0.00001
@@ -29,26 +29,22 @@ def partition(graph: nx.Graph, num_fidler_vectors: int = 1, num_clusters: int = 
     return clusters
 
 
-def cluster(matrix: np.ndarray, cluster_size: int,
-                   num_fidler_vectors: int = 1, num_clusters: int = 2) -> List[Set[int]]:
-    graph: nx.Graph = nx.from_numpy_matrix(matrix)
-    subgraph_list = [graph]
-    while True:
-        next_subgraph_list = []
-        for subgraph in subgraph_list:
-            if subgraph.number_of_nodes() > cluster_size:
-                clusters = partition(subgraph, num_fidler_vectors, num_clusters)
-                for cluster in clusters:
-                    next_subgraph_list.append(nx.subgraph(graph, cluster))
-            else:
-                next_subgraph_list.append(subgraph)
-        subgraph_list = next_subgraph_list
-        number_of_nodes = np.asarray([g.number_of_nodes() for g in subgraph_list])
-        if np.sum(number_of_nodes > cluster_size) == 0:
-            break
-    clusters = [set(subgraph.nodes) for subgraph in subgraph_list]
-    return clusters
-
+def cluster(matrix: np.ndarray, cluster_size: int, join_function=TreeJoin.join_tree,
+            num_fidler_vectors: int = 1, num_clusters: int = 2, ) -> List[Set[int]]:
+    g: nx.Graph = nx.from_numpy_matrix(matrix)
+    root = Node("root", cluster=set(g.nodes))
+    # subgraph_list contains all nodes with size > cluster_size
+    node_list = [root] if len(root.cluster) > cluster_size else []
+    while node_list:
+        next_list = []
+        for node in node_list:
+            clusters = partition(nx.subgraph(g, node.cluster), num_fidler_vectors, num_clusters)
+            next_list.extend([Node(str(i), parent=node, cluster=cluster) for i, cluster in enumerate(clusters, start=1)])
+            node.cluster.clear()
+        next_list = list(filter(lambda n: len(n.cluster) > cluster_size, next_list))
+        node_list = next_list
+    clusters = [node.cluster for node in root.leaves]
+    return clusters if join_function is None else join_function(matrix, root, cluster_size)
 
 
 

@@ -7,23 +7,25 @@ import math
 from MatrixGenerators import BlockMatrix, ReducedMatrix
 from RegretEstimators import DataLossEstimator
 
-
 class Result:
     def __init__(self, tests_num: int = 0):
         self.dataLoss = np.zeros(tests_num)
         self.dataLoss_percentage = np.zeros(tests_num)
         self.average_cluster_size = np.zeros(tests_num)
         self.time_delta = np.zeros(tests_num)
+        self.dataIn_percentage = np.zeros(tests_num)
 
         self.attributes = dict()
-        self.attributes["Data Loss"] = self.dataLoss
-        self.attributes["Data Loss Percentage"] = self.dataLoss_percentage
+        # self.attributes["Data Loss"] = self.dataLoss
+        # self.attributes["Data Loss Percentage"] = self.dataLoss_percentage
         self.attributes["Average Cluster Size"] = self.average_cluster_size
-        self.attributes["Time Delta"] = self.time_delta
+        # self.attributes["Time Delta"] = self.time_delta
+        self.attributes["Data In Cluster Percentage"] = self.dataIn_percentage
 
 
 class ClusteringComparator:
-    def __init__(self, agents_num: int, missions_num: int, cluster_size: int, tests_num: int = 1):
+    def __init__(self, agents_num: int, missions_num: int, cluster_size: int, tests_num: int = 1, identifier: int = 0):
+        self.id = identifier
         self.tests_num = tests_num
         self.agents_num = agents_num
         self.missions_num = missions_num
@@ -31,7 +33,8 @@ class ClusteringComparator:
         self.data = dict()
 
     def create_block_matrix(self) -> np.ndarray:
-        return BlockMatrix.generate_block_negative_truncated_gaussian(self.agents_num, self.missions_num)
+        return BlockMatrix.generate_block_negative_truncated_gaussian(self.agents_num, self.missions_num,
+                                                                      standard_deviation=100)
 
     def reduce_matrix(self, block_matrix: np.ndarray, lp_norm: float = 1.0) -> np.ndarray:
         return ReducedMatrix.reduce_block_matrix(block_matrix, self.agents_num, self.missions_num, lp_norm)
@@ -54,6 +57,7 @@ class ClusteringComparator:
             print("Running test {0}".format(test_iter + 1))
             block_matrix = self.create_block_matrix()
             reduced_matrix = self.reduce_matrix(block_matrix)
+            reduced_edge_sum = np.sum(np.abs(reduced_matrix))
             for key in alg_dict.keys():
                 print("test {0}, Alg: {1}".format(test_iter + 1, key))
                 time_start = time.time()
@@ -65,9 +69,10 @@ class ClusteringComparator:
                 print("cluster_len:" + str([len(c) for c in clusters]))
                 result: Result = self.data[key]
                 result.dataLoss[test_iter] = regret
-                result.dataLoss_percentage[test_iter] = regret / np.sum(np.abs(reduced_matrix))
+                result.dataLoss_percentage[test_iter] = regret / reduced_edge_sum
                 result.average_cluster_size[test_iter] = average_cluster_size
                 result.time_delta[test_iter] = time_delta
+                result.dataIn_percentage[test_iter] = (reduced_edge_sum - regret) / reduced_edge_sum
 
     @staticmethod
     def __create_figure(name: str, num: int):
@@ -79,9 +84,9 @@ class ClusteringComparator:
     def show_data(self):
         line_style = ['-', '--', '-.', ':']
         for att_index, att_key in enumerate(Result().attributes.keys(), start=1):
-            ax = self.__create_figure(att_key, att_index)
+            ax = self.__create_figure(att_key, att_index + 10*self.id)
             for index, key in enumerate(self.data.keys()):
                 style = line_style[math.floor(index / 10) % len(line_style)]
                 ax.plot(self.data[key].attributes[att_key], label=key, linestyle=style)
             ax.legend()
-        plt.show()
+        plt.show(block=False)
