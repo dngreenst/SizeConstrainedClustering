@@ -30,7 +30,7 @@ def partition(graph: nx.Graph, num_fidler_vectors: int = 1, num_clusters: int = 
 
 
 def cluster(matrix: np.ndarray, cluster_size: int, join_function=TreeJoin.join_tree,
-            num_fidler_vectors: int = 1, num_clusters: int = 2, ) -> List[Set[int]]:
+            num_fidler_vectors: int = 1, num_clusters: int = 2) -> List[Set[int]]:
     g: nx.Graph = nx.from_numpy_matrix(matrix)
     root = Node("root", cluster=set(g.nodes))
     # subgraph_list contains all nodes with size > cluster_size

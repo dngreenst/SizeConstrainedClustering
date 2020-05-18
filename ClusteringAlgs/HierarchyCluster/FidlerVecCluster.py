@@ -46,7 +46,7 @@ def fidler_vector_partition(graph: nx.Graph, method_function, num_fidler_vectors
 
 
 def fidler_cluster(matrix: np.ndarray, cluster_size: int, method_function, join_function=TreeJoin.join_tree,
-                   num_fidler_vectors: int = 1, num_clusters: int = 2, ) -> List[Set[int]]:
+                   num_fidler_vectors: int = 1, num_clusters: int = 2) -> List[Set[int]]:
     g: nx.Graph = nx.from_numpy_matrix(matrix)
     root = Node("root", cluster=set(g.nodes))
     # subgraph_list contains all nodes with size > cluster_size
