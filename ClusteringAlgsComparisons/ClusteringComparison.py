@@ -19,18 +19,20 @@ class Result:
         # self.attributes["Data Loss"] = self.dataLoss
         # self.attributes["Data Loss Percentage"] = self.dataLoss_percentage
         self.attributes["Average Cluster Size"] = self.average_cluster_size
-        # self.attributes["Time Delta"] = self.time_delta
+        self.attributes["Time Delta"] = self.time_delta
         self.attributes["Data In Cluster Percentage"] = self.dataIn_percentage
 
 
 class ClusteringComparator:
-    def __init__(self, agents_num: int, missions_num: int, cluster_size: int, tests_num: int = 1, identifier: int = 0):
+    def __init__(self, agents_num: int, missions_num: int, cluster_size: int,
+                 tests_num: int = 1, identifier: int = 0, block_matrix: np.ndarray = None):
         self.id = identifier
         self.tests_num = tests_num
         self.agents_num = agents_num
         self.missions_num = missions_num
         self.cluster_size = cluster_size
         self.data = dict()
+        self.matrix = block_matrix
 
     def create_block_matrix(self) -> np.ndarray:
         return BlockMatrix.generate_block_negative_truncated_gaussian(self.agents_num, self.missions_num,
@@ -55,9 +57,9 @@ class ClusteringComparator:
 
         for test_iter in np.arange(self.tests_num):
             print("Running test {0}".format(test_iter + 1))
-            block_matrix = self.create_block_matrix()
+            block_matrix = self.create_block_matrix() if self.matrix is None else self.matrix
             reduced_matrix = self.reduce_matrix(block_matrix)
-            reduced_edge_sum = np.sum(np.abs(reduced_matrix))
+            reduced_edge_sum = np.sum(reduced_matrix)
             for key in alg_dict.keys():
                 print("test {0}, Alg: {1}".format(test_iter + 1, key))
                 time_start = time.time()
@@ -66,13 +68,14 @@ class ClusteringComparator:
                 average_cluster_size = self.agents_num / len(clusters)
                 regret = self.__do_regret(reduced_matrix, clusters)
                 """setting data"""
-                print("cluster_len:" + str([len(c) for c in clusters]))
                 result: Result = self.data[key]
                 result.dataLoss[test_iter] = regret
                 result.dataLoss_percentage[test_iter] = regret / reduced_edge_sum
                 result.average_cluster_size[test_iter] = average_cluster_size
                 result.time_delta[test_iter] = time_delta
                 result.dataIn_percentage[test_iter] = (reduced_edge_sum - regret) / reduced_edge_sum
+                print("cluster_len: {0}, fitness: {1}".format(str([len(c) for c in clusters]),
+                                                              result.dataIn_percentage[test_iter]))
 
     @staticmethod
     def __create_figure(name: str, num: int):

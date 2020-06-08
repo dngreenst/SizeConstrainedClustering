@@ -5,7 +5,7 @@ import numpy as np
 from typing import List, Set
 
 
-def random_permutation_clustering(block_matrix: np.array, n: int, m: int, max_cluster_size: int) -> List[Set[int]]:
+def random_permutation_clustering(block_matrix: np.ndarray, n: int, m: int, max_cluster_size: int) -> List[Set[int]]:
 
     if n <= 0 or m <= 0:
         raise RuntimeError(f'Expected n, m > 0, received n={n}, m={m}')

@@ -92,7 +92,7 @@ root_cluster_node_list_temp.append(root_node)
 while flag == 1 or len(root_cluster_node_list_temp) > 0:
     current_root_node = root_cluster_node_list_temp[0] #define the node act as the current center
     root_cluster_node_list_temp.remove(current_root_node)
-    sub_G = CreateSubGraphFromRoot2Hope(G, current_root_node)
+    sub_G = CreateSubGraphFromRoot1Hope(G, current_root_node)
     root_node_idx = list(sub_G.nodes).index(current_root_node)
     a_sub = nx.adjacency_matrix(sub_G).todense()
     p_dist = ssd.squareform(a_sub)

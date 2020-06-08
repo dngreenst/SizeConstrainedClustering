@@ -6,14 +6,10 @@ from typing import List, Set
 from MatrixGenerators import ReducedMatrix
 
 
-def calculate_data_loss(matrix: np.array, clusters: List[Set[int]], lp_norm: float = 1.0) -> float:
-
-    # Input validation
-
+def cluster_validity(matrix:np.ndarray, clusters: List[Set[int]]):
     # Validate that the np.array is a matrix, and that it is square
     if len(matrix.shape) != 2 or matrix.shape[0] != matrix.shape[1]:
         raise RuntimeError(f'Only square matrices are supported')
-
     # Validate that:
     # 1. Each cluster contains only integers
     # 2. Each cluster contains distinct elements
@@ -33,13 +29,15 @@ def calculate_data_loss(matrix: np.array, clusters: List[Set[int]], lp_norm: flo
 
     min_cluster_idx = min(cluster_union)
     max_cluster_idx = max(cluster_union)
-
     if min_cluster_idx != 0 or max_cluster_idx != matrix_dimension - 1:
         raise RuntimeError(f'cluster indices don\'t match matrix indices')
 
+
+def create_indicator_matrix(matrix: np.ndarray, clusters: List[Set[int]]) -> np.ndarray:
     # For each cluster C, create an indicator matrix, such that indicator[i, j] = 1 <==> i,j are C
     # Combine the indicator matrices to create a cumulative indicator matrix, such that
     # cumulative_indicator[i, j] = 1 <==> there is a cluster C in the provided clusters, such that i,j are in C
+    matrix_dimension = matrix.shape[0]
     clusters = [list(cluster) for cluster in clusters]
     cumulative_indicator = np.zeros_like(matrix)
     for cluster in clusters:
@@ -48,15 +46,18 @@ def calculate_data_loss(matrix: np.array, clusters: List[Set[int]], lp_norm: flo
         indicator_array[cluster] = 1
         indicator_matrix = np.outer(indicator_array, indicator_array)
         cumulative_indicator += indicator_matrix
+    return cumulative_indicator
 
-    cumulative_indicator_complement = np.ones_like(cumulative_indicator) - cumulative_indicator
 
+def calculate_data_loss(matrix: np.ndarray, clusters: List[Set[int]], lp_norm: float = 1.0) -> float:
+    # Input validation
+    cluster_validity(matrix, clusters)
+    matrix_dimension = matrix.shape[0]
+    indicator_matrix = create_indicator_matrix(matrix, clusters)
+    cumulative_indicator_complement = np.ones_like(indicator_matrix) - indicator_matrix
     lost_data = np.multiply(cumulative_indicator_complement, matrix).reshape(matrix_dimension ** 2)
-
     # python complains, but a float argument for 'norm' acts as expected - that is, L_p norm.
-    data_loss_size = np.linalg.norm(lost_data, lp_norm)
-
-    return data_loss_size
+    return np.linalg.norm(lost_data, lp_norm)
 
 
 def block_matrix_calculate_data_loss(block_matrix: np.array, n: int, m: int, clusters: List[Set[int]],

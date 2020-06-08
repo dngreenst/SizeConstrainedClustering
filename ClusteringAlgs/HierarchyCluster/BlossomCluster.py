@@ -11,11 +11,11 @@ class BlossomCluster:
         """Mapping vertex (indexes in matrix) to matches"""
         graph: nx.Graph = nx.from_numpy_matrix(matrix)
         matches = list(nx.max_weight_matching(graph))
-        if matrix.shape[0] % 2 != 0:
-            sum_matched_indexes = np.sum(np.asarray(matches).flatten())
-            sum_all_indexes = np.sum(np.arange(matrix.shape[0]))
-            missing_index = sum_all_indexes - sum_matched_indexes
-            matches.append((missing_index, missing_index))
+        matched = set.union(*[set(m) for m in matches])
+        all_nodes = set(np.arange(matrix.shape[0]))
+        if len(matched) != len(all_nodes):
+            for node in all_nodes.difference(matched):
+                matches.append((node, node))
         return matches
 
     @staticmethod
@@ -31,7 +31,7 @@ class BlossomCluster:
         return BlossomCluster.group_clusters(clusters, matches), matches
 
     @staticmethod
-    def cluster(matrix: np.array, cluster_size: int) -> List[Set[int]]:
+    def cluster(matrix: np.ndarray, cluster_size: int) -> List[Set[int]]:
         n = matrix.shape[0]
         k = cluster_size
         clusters = [{i} for i in range(n)]
@@ -44,7 +44,7 @@ class BlossomCluster:
         return clusters
 
 
-def blossom_cluster_with_missions(block_matrix: np.array, n: int, m: int, cluster_size: int) -> List[Set[int]]:
+def blossom_cluster_with_missions(block_matrix: np.ndarray, n: int, m: int, cluster_size: int) -> List[Set[int]]:
     matrix = ReducedMatrix.reduce_block_matrix(block_matrix, n, m, cluster_size)
     return BlossomCluster.cluster(matrix, cluster_size)
 

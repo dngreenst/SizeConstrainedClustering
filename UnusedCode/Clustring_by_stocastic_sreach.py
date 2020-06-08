@@ -34,7 +34,7 @@ def CreateSubGraphFromRoot1Hope(G,root_node):
     n_list.append(root_node)
     for u,v in G.edges(root_node):
         if all(n_list[j] != v for j in range(len(n_list))):
-            n_list.append(v)   # Add nodes from first hope    
+            n_list.append(v)   # Add nodes from first hope
     return G.subgraph(n_list)
 
 def CreateSubGraphFromRoot2Hope(G,root_node):
@@ -45,7 +45,7 @@ def CreateSubGraphFromRoot2Hope(G,root_node):
             n_list.append(v)   # Add nodes from first hope
         for u1, v1 in G.edges(v):
             if all(n_list[j] != v1 for j in range(len(n_list))):
-                n_list.append(v1)  # Add nodes from second hope    
+                n_list.append(v1)  # Add nodes from second hope
     return G.subgraph(n_list)
 
 def FisableSolution(max_num_of_nodes_in_cluster, cluster_list): 
@@ -186,6 +186,7 @@ plt.draw()  # pyplot draw()
 
 
 adj_mat = nx.adjacency_matrix(G).todense()
+edge_sum = np.sum(adj_mat)
 
 kwargs = {'adj_mat': adj_mat , 'max_num_of_nodes_in_cluster' : sub_graph_node_qty}
 fitness_cust = mlrose.CustomFitness(UtilityFunc_main, **kwargs)
@@ -198,7 +199,7 @@ cluser_list = ConvertClusterVectorToList(best_state)
 print('simulated_annealing:')
 for cluster in cluser_list:
     print(cluster)
-print('The fitness at the best state is: ', best_fitness)
+print('The fitness at the best state is: ', best_fitness/edge_sum)
 
 schedule = mlrose.ExpDecay()
 init_state, val = GreadySearch2(adj_mat, sub_graph_node_qty)
@@ -207,28 +208,28 @@ cluser_list = ConvertClusterVectorToList(best_state)
 print('gready2 + simulated_annealing:')
 for cluster in cluser_list:
     print(cluster)
-print('The fitness at the best state is: ', best_fitness)
+print('The fitness at the best state is: ', best_fitness/edge_sum)
 
 best_state, best_fitness = mlrose.genetic_alg(problem, mutation_prob = 0.2, max_attempts = 1000, random_state = 2)
 cluser_list = ConvertClusterVectorToList(best_state)
 print('genetic_alg:')
 for cluster in cluser_list:
     print(cluster)
-print('The fitness at the best state is: ', best_fitness)
+print('The fitness at the best state is: ', best_fitness/edge_sum)
 
 best_state, best_fitness = mlrose.hill_climb(problem, max_iters = 1000)
 cluser_list = ConvertClusterVectorToList(best_state)
 print('hill_climb:')
 for cluster in cluser_list:
     print(cluster)
-print('The fitness at the best state is: ', best_fitness)
+print('The fitness at the best state is: ', best_fitness/edge_sum)
 
 best_state, best_fitness = mlrose.random_hill_climb(problem, max_iters = 10000)
 cluser_list = ConvertClusterVectorToList(best_state)
 print('random_hill_climb:')
 for cluster in cluser_list:
     print(cluster)
-print('The fitness at the best state is: ', best_fitness)
+print('The fitness at the best state is: ', best_fitness/edge_sum)
 
 #best_state, best_fitness =  GreadySearch1(adj_mat, sub_graph_node_qty)
 
@@ -239,5 +240,5 @@ cluser_list = ConvertClusterVectorToList(best_state)
 print('Gready loop:')
 for cluster in cluser_list:
     print(cluster)
-print('The fitness at the best state is: ', best_fitness)
+print('The fitness at the best state is: ', best_fitness/edge_sum)
 
