@@ -1,3 +1,6 @@
+import six
+import sys
+sys.modules['sklearn.externals.six'] = six
 import mlrose
 from typing import List, Set, Tuple
 import numpy as np
