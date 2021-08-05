@@ -35,8 +35,21 @@ class ClusteringComparator:
         self.matrix = block_matrix
 
     def create_block_matrix(self) -> np.ndarray:
-        return BlockMatrix.generate_block_negative_truncated_gaussian(self.agents_num, self.missions_num,
-                                                                      standard_deviation=100)
+        # return BlockMatrix.generate_block_negative_truncated_gaussian(self.agents_num, self.missions_num,
+        #                                                               standard_deviation=100)
+        clusters_num = int(np.floor(self.agents_num / self.cluster_size))
+        in_cluster_mean = 0.0
+        in_cluster_deviation = 100.0
+        outlier_num = clusters_num
+        outlier_mean = 0.0
+        outlier_deviation = 2 * in_cluster_deviation
+        return BlockMatrix.nonnegative_cluster_matrix_with_outliers(clusters_num=clusters_num,
+                                                                    cluster_size=self.cluster_size,
+                                                                    in_cluster_element_mean=in_cluster_mean,
+                                                                    in_cluster_element_deviation=in_cluster_deviation,
+                                                                    outliers_num=outlier_num,
+                                                                    outlier_elements_mean=outlier_mean,
+                                                                    outliers_element_deviation=outlier_deviation)
 
     def reduce_matrix(self, block_matrix: np.ndarray, lp_norm: float = 1.0) -> np.ndarray:
         return ReducedMatrix.reduce_block_matrix(block_matrix, self.agents_num, self.missions_num, lp_norm)

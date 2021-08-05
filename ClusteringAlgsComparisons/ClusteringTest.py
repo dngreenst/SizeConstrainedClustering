@@ -17,7 +17,7 @@ import networkx as nx
 class ClusteringTest:
     @staticmethod
     def test_demonstrate_testing_method():
-        agents = 20
+        agents = 24
         missions = 1
         cluster_size = 8
         tests = 50
@@ -105,7 +105,8 @@ class ClusteringTest:
         #                                     solver=StochasticCluster.hill_climb_solver_factory())
         #alg_dict['RandomHill'] = functools.partial(StochasticCluster.solve,
         #                                           solver=StochasticCluster.random_hill_climb_solver_factory())
-        for alg in ['Greedy', 'GreedyLoop']: #, 'Blossom']:
+        # for alg in ['Greedy', 'GreedyLoop']: #, 'Blossom']:
+        for alg in ['Greedy']:
             alg_dict['Annealing_{0}'.format(alg)] = functools.partial(
                 StochasticCluster.solve_with_initial_solver,
                 init_solver=alg_dict[alg],
