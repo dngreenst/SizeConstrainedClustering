@@ -1,26 +1,77 @@
-import unittest
 from ClusteringAlgsComparisons.ClusteringComparison import ClusteringComparator
 from ClusteringAlgs import RandomAssignment
 from ClusteringAlgs.HierarchyCluster import BlossomCluster
 from ClusteringAlgs.HierarchyCluster import FidlerVecCluster
 from ClusteringAlgs.HierarchyCluster import SpectralClustering
+from ClusteringResultViewer import ClusteringResultViewer
 import numpy as np
+import pandas as pd
 import functools
-import math
 import matplotlib.pyplot as plt
 from ClusteringAlgs.HierarchyCluster import TreeJoin
 from ClusteringAlgs.StochasticCluster import StochasticCluster
+from datetime import datetime
+import shutil
+import os
+from os import path
+import uuid
 
 import networkx as nx
 
 
 class ClusteringTest:
     @staticmethod
-    def test_demonstrate_testing_method():
-        agents = 24
-        missions = 1
-        cluster_size = 8
-        tests = 50
+    def multiple_parameters_testing_method(agents_num_list, cluster_size_list, missions, num_tests, algo_filter_list):
+        total_num_tests = num_tests * len(agents_num_list) * len(cluster_size_list)
+        results_dir_name = 'results'
+        timestamp = datetime.now().strftime("%Y_%m_%d-%I:%M:%S_%p")
+        text_identifier = f'{results_dir_name}_{num_tests}_tests_{timestamp}'
+        matrices_dir_name = f'matrices_{num_tests}_tests_{timestamp}'
+
+        os.mkdir(matrices_dir_name)
+        if path.exists(results_dir_name):
+            os.rename(results_dir_name, f'{results_dir_name}_prev')
+
+        total_res_df = pd.DataFrame()
+        for agents in agents_num_list:
+            for cluster_size in cluster_size_list:
+                matrices_ids = [uuid.uuid1() for i in range(num_tests)]
+                os.mkdir(results_dir_name)
+                os.mkdir(os.path.join(results_dir_name, 'matrices'))
+                curr_df = ClusteringTest.test_demonstrate_testing_method(agents           = agents,
+                                                                         missions         = missions,
+                                                                         cluster_size     = cluster_size,
+                                                                         tests            = num_tests,
+                                                                         block            = False,
+                                                                         algo_filter_list = algo_filter_list,
+                                                                         matrices_ids     = matrices_ids)
+                total_res_df = pd.concat([total_res_df, curr_df])
+
+                # copy test matrices
+                source_folder = os.path.join(results_dir_name, 'matrices')
+                destination_folder = matrices_dir_name
+                for file_name in os.listdir(source_folder):
+                    source = os.path.join(source_folder, file_name)
+                    destination = os.path.join(destination_folder, file_name)
+                    if os.path.isfile(source):
+                        shutil.copy(source, destination)
+
+                os.rename(results_dir_name, f'{text_identifier}_{agents}_agents_{cluster_size}_cluster_size')
+
+        ClusteringTest.save_results_df(total_res_df, text_identifier)
+        ClusteringTest.scatter_plot(total_res_df, total_num_tests, timestamp)
+        ClusteringTest.box_plot(total_res_df, total_num_tests, timestamp)
+        # plt.show()
+
+    @staticmethod
+    def test_demonstrate_testing_method(agents=24, missions=1, cluster_size=8, tests=50, block=True, algo_filter_list=[], matrices_ids=None) -> pd.DataFrame():
+        agents = agents
+        missions = missions
+        cluster_size = cluster_size
+        tests = tests
+
+        if matrices_ids is None:
+            matrices_ids = [i for i in range(tests)]
 
         join_method_dict = dict()
         join_method_dict["random"] = TreeJoin.max_random_join
@@ -30,48 +81,17 @@ class ClusteringTest:
         fidler_method_dict = dict()
         fidler_method_dict["agglom"] = FidlerVecCluster.agglomerative_partition
         fidler_method_dict["kmeans"] = FidlerVecCluster.k_means_partition
-        """"""
-        comparator = ClusteringComparator(agents_num=agents, missions_num=missions, cluster_size=cluster_size,
-                                          tests_num=tests)
+        comparator = ClusteringComparator(agents_num=agents, missions_num=missions, cluster_size=cluster_size, tests_num=tests)
         alg_dict = dict()
         alg_dict["Random"] = RandomAssignment.random_permutation_clustering_from_matrix
         alg_dict["Blossom"] = BlossomCluster.BlossomCluster.cluster
         ClusteringTest.add_stochastic_algs(alg_dict)
-        # ClusteringTest.add_fidler_algs(alg_dict, fidler_method_dict, join_method_dict, 2, 2)
-        # ClusteringTest.add_spectral_algs(alg_dict, join_method_dict, 2, 2)
-
-        comparator.compare(alg_dict)
+        ClusteringTest.filer_algorithms_to_compare(algo_filter_list, alg_dict)
+        comparator.compare(alg_dict, matrices_ids)
+        ClusteringTest.save_results_df(comparator.res_df, "results/results_{}".format(comparator.timestamp))
         comparator.show_data()
-        """"""
-        # comparator = ClusteringComparator(agents_num=agents, missions_num=missions, cluster_size=cluster_size,
-        #                                   tests_num=tests, identifier=1)
-        # n = 3
-        # alg_dict = dict()
-        # fidler_method_dict = dict()
-        # fidler_method_dict["agglom"] = FidlerVecCluster.agglomerative_partition
-        # ClusteringTest.add_fidler_algs(alg_dict, fidler_method_dict, join_method_dict, np.arange(1, n + 1), np.arange(2, n + 1))
-        # comparator.compare(alg_dict)
-        # comparator.show_data()
-        # """"""
-        # comparator = ClusteringComparator(agents_num=agents, missions_num=missions, cluster_size=cluster_size,
-        #                                   tests_num=tests, identifier=2)
-        # n = 3
-        # alg_dict = dict()
-        # fidler_method_dict = dict()
-        # fidler_method_dict["kmeans"] = FidlerVecCluster.k_means_partition
-        # ClusteringTest.add_fidler_algs(alg_dict, fidler_method_dict, join_method_dict, np.arange(1, n + 1), np.arange(2, n + 1))
-        # comparator.compare(alg_dict)
-        # comparator.show_data()
-        # """"""
-        # comparator = ClusteringComparator(agents_num=agents, missions_num=missions, cluster_size=cluster_size,
-        #                                   tests_num=tests, identifier=3)
-        # n = 3
-        # alg_dict = dict()
-        # ClusteringTest.add_spectral_algs(alg_dict, join_method_dict, np.arange(1, n + 1), np.arange(2, n + 1))
-        # comparator.compare(alg_dict)
-        # comparator.show_data()
-        # """"""
-        plt.show()
+        plt.show(block=block)
+        return comparator.res_df
 
     @staticmethod
     def add_fidler_algs(alg_dict, method_dict: dict, join_dict: dict, num_vectors: np.ndarray, num_clusters: np.ndarray):
@@ -97,15 +117,6 @@ class ClusteringTest:
         alg_dict["Greedy"] = StochasticCluster.greedy_search
         alg_dict['GreedyLoop'] = functools.partial(StochasticCluster.greedy_loop,
                                                    solver=StochasticCluster.greedy_search, iter_num=100)
-        # alg_dict['Genetic'] = functools.partial(StochasticCluster.solve,
-        #                                        solver=StochasticCluster.genetic_solver_factory())
-        #alg_dict['Annealing'] = functools.partial(StochasticCluster.solve,
-        #                                          solver=StochasticCluster.annealing_solver_factory())
-        #alg_dict['Hill'] = functools.partial(StochasticCluster.solve,
-        #                                     solver=StochasticCluster.hill_climb_solver_factory())
-        #alg_dict['RandomHill'] = functools.partial(StochasticCluster.solve,
-        #                                           solver=StochasticCluster.random_hill_climb_solver_factory())
-        # for alg in ['Greedy', 'GreedyLoop']: #, 'Blossom']:
         for alg in ['Greedy']:
             alg_dict['Annealing_{0}'.format(alg)] = functools.partial(
                 StochasticCluster.solve_with_initial_solver,
@@ -127,13 +138,94 @@ class ClusteringTest:
             graph[u][v]['weight'] = np.random.randint(1, 50)
         return nx.to_numpy_array(graph)
 
+    @staticmethod
+    def scatter_plot(res_df, tests_num, timestamp):
+        df = res_df.copy()
+        df['color'] = df['algorithm'].astype("category")
+
+        df.plot.scatter(x       = 'dataLoss_percentage',
+                        y       = 'time_delta',
+                        c       = 'color',
+                        cmap    = "viridis",
+                        s       = df['average_cluster_size']**2.5,
+                        logy    = True,
+                        alpha   = 0.5,
+                        title   = "Clustering Comparison - Combined results\n(size = avg cluster size)",
+                        grid    = True,
+                        figsize = (18, 10))
+
+        plt.savefig(f'scatter_full_{tests_num}_tests_{timestamp}.pdf')
+        plt.show()
+
+    @staticmethod
+    def box_plot(res_df, tests_num, timestamp):
+        cols = ['algorithm', 'dataLoss_percentage', 'dataIn_percentage', 'time_delta', 'average_cluster_size']
+        df = res_df[cols].copy()
+        df['algorithm'] = df['algorithm'].astype("category")
+
+        fig, ax_new = plt.subplots(2, 2, figsize=(18, 10), sharey='none')
+        df.boxplot(by="algorithm", ax=ax_new, layout=(2, 2), grid=False)
+        fig.suptitle(f'Clustering Comparison - Combined results\n{tests_num} tests')
+        plt.savefig(f'boxplot_combined_{tests_num}_tests_{timestamp}.pdf')
+        plt.show(block=False)
+
+    @staticmethod
+    def save_results_df(res_df, base_name):
+        res_df.to_csv(base_name + '.csv')
+        grouped_res_df = res_df.drop(columns=['test_num',
+                                              'missions_num',
+                                              'cluster_size',
+                                              'agents_num']).groupby('algorithm')
+        grouped_res_df.describe().to_csv(base_name + '_describe.csv')
+
+    @staticmethod
+    def filer_algorithms_to_compare(algo_filter_list, alg_dict):
+        for key in algo_filter_list:
+            if key in alg_dict:
+                del alg_dict[key]
 
 
+if __name__ == '__main__':
 
+    # __ALL_ALGORITHMS = ['Greedy',
+    #                     'GreedyLoop',
+    #                     'Random',
+    #                     'Blossom',
+    #                     'Annealing_Greedy',
+    #                     'Hill_Greedy',
+    #                     'RandomHill_Greedy']
 
+    # # Run single config test
+    # os.mkdir("results")
+    # os.mkdir("results/matrices")
+    # ClusteringTest.test_demonstrate_testing_method(agents           = 24,
+    #                                                missions         = 1,
+    #                                                cluster_size     = 8,
+    #                                                tests            = 50,
+    #                                                algo_filter_list = [],
+    #                                                matrices_ids     = None)
 
+    # # Run multi-configs test
+    # ClusteringTest.multiple_parameters_testing_method(agents_num_list   = [24, 36, 48],
+    #                                                   cluster_size_list = [4, 8, 16],
+    #                                                   missions          = 1,
+    #                                                   num_tests         = 100,
+    #                                                   algo_filter_list  = [])
 
+    # Visualize results
+    results_csv_name = 'results_5_tests_2021_08_19-10:35:13_AM.csv'
+    results_df = pd.read_csv(results_csv_name).drop(columns=['Unnamed: 0'])
+    matrices_dir = 'matrices' + results_csv_name.split('results')[1]
+    crv = ClusteringResultViewer(results_df=results_df, matrices_dir=matrices_dir)
 
+    # Visualize result by index in csv
+    crv.show_single_result_by_index(100)
 
-ClusteringTest.test_demonstrate_testing_method()
+    # Visualize random result by conditions
+    crv.show_random_single_result_by(algorithms               = ['Blossom', 'Annealing_Greedy'],
+                                     agents_num               = [24, 36],
+                                     cluster_size             = [4, 8],
+                                     max_data_loss_percentage = 0.15,
+                                     max_time_delta_seconds   = 0.1)
 
+    print("Done")

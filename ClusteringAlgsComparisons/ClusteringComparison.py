@@ -1,11 +1,18 @@
+import os
+from os import path
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
+# import matplotlib
+# matplotlib.use('TkAgg')
 from typing import List, Set, Tuple, Dict
 import time
+from datetime import datetime
 import math
 
 from MatrixGenerators import BlockMatrix, ReducedMatrix
 from RegretEstimators import DataLossEstimator
+
 
 class Result:
     def __init__(self, tests_num: int = 0):
@@ -33,16 +40,29 @@ class ClusteringComparator:
         self.cluster_size = cluster_size
         self.data = dict()
         self.matrix = block_matrix
+        self.timestamp = datetime.now().strftime("%Y_%m_%d-%I:%M:%S_%p")
+        self.res_df = pd.DataFrame(columns=["test_num",
+                                            "matrix_id",
+                                            "algorithm",
+                                            "agents_num",
+                                            "missions_num",
+                                            "cluster_size",
+                                            "dataLoss",
+                                            "dataLoss_percentage",
+                                            "average_cluster_size",
+                                            "time_delta",
+                                            "dataIn_percentage",
+                                            "output_clusters"])
 
     def create_block_matrix(self) -> np.ndarray:
         # return BlockMatrix.generate_block_negative_truncated_gaussian(self.agents_num, self.missions_num,
         #                                                               standard_deviation=100)
         clusters_num = int(np.floor(self.agents_num / self.cluster_size))
-        in_cluster_mean = 0.0
-        in_cluster_deviation = 100.0
+        in_cluster_mean = 0.0  # [0, 1, 2]
+        in_cluster_deviation = 100.0  # [50, 100, 200] and 0 once with in_cluster_mean=1, outlier_mean=1.1
         outlier_num = clusters_num
         outlier_mean = 0.0
-        outlier_deviation = 2 * in_cluster_deviation
+        outlier_deviation = 2 * in_cluster_deviation  # [0.5, 2, 8]
         return BlockMatrix.nonnegative_cluster_matrix_with_outliers(clusters_num=clusters_num,
                                                                     cluster_size=self.cluster_size,
                                                                     in_cluster_element_mean=in_cluster_mean,
@@ -64,7 +84,7 @@ class ClusteringComparator:
     def __do_regret(matrix: np.ndarray, clusters: List[Set[int]]) -> float:
         return DataLossEstimator.calculate_data_loss(matrix, clusters)
 
-    def compare(self, alg_dict: dict) -> dict:
+    def compare(self, alg_dict: dict, matrices_ids: list = None):
         for key in alg_dict.keys():
             self.data[key] = Result(self.tests_num)
 
@@ -73,6 +93,7 @@ class ClusteringComparator:
             block_matrix = self.create_block_matrix() if self.matrix is None else self.matrix
             reduced_matrix = self.reduce_matrix(block_matrix)
             reduced_edge_sum = np.sum(reduced_matrix)
+            np.savetxt(f"results/matrices/{matrices_ids[test_iter]}.csv", block_matrix, delimiter=",")
             for key in alg_dict.keys():
                 print("test {0}, Alg: {1}".format(test_iter + 1, key))
                 time_start = time.time()
@@ -87,6 +108,19 @@ class ClusteringComparator:
                 result.average_cluster_size[test_iter] = average_cluster_size
                 result.time_delta[test_iter] = time_delta
                 result.dataIn_percentage[test_iter] = (reduced_edge_sum - regret) / reduced_edge_sum
+                iter_res = pd.Series([test_iter+1,
+                                      matrices_ids[test_iter],
+                                      key,
+                                      self.agents_num,
+                                      self.missions_num,
+                                      self.cluster_size,
+                                      result.dataLoss[test_iter],
+                                      result.dataLoss_percentage[test_iter],
+                                      result.average_cluster_size[test_iter],
+                                      result.time_delta[test_iter],
+                                      result.dataIn_percentage[test_iter],
+                                      clusters], index=self.res_df.columns)
+                self.res_df = self.res_df.append(iter_res, ignore_index=True)
                 print("cluster_len: {0}, fitness: {1}".format(str([len(c) for c in clusters]),
                                                               result.dataIn_percentage[test_iter]))
 
@@ -98,11 +132,47 @@ class ClusteringComparator:
         return ax
 
     def show_data(self):
+        # self.__line_plot()
+        self.__scatter_plot()
+        self.__box_plot()
+
+    def __line_plot(self):
         line_style = ['-', '--', '-.', ':']
         for att_index, att_key in enumerate(Result().attributes.keys(), start=1):
-            ax = self.__create_figure(att_key, att_index + 10*self.id)
+            ax = self.__create_figure(att_key, att_index + 10 * self.id)
             for index, key in enumerate(self.data.keys()):
                 style = line_style[math.floor(index / 10) % len(line_style)]
                 ax.plot(self.data[key].attributes[att_key], label=key, linestyle=style)
             ax.legend()
+        plt.show(block=False)
+
+    def __scatter_plot(self):
+        df = self.res_df.copy()
+        df = df[df['algorithm'] != 'Random']
+        df['color'] = df['algorithm'].astype("category")
+
+        df.plot.scatter(x       = 'dataLoss_percentage',
+                        y       = 'time_delta',
+                        c       = 'color',
+                        cmap    = "viridis",
+                        s       = df['average_cluster_size']**2.5,
+                        logy    = True,
+                        alpha   = 0.5,
+                        title   = "Clustering Comparison\n(size = avg cluster size)",
+                        grid    = True,
+                        figsize = (18, 10))
+
+        plt.savefig(f'results/scatter_full_{self.tests_num}_tests_{self.timestamp}.pdf')
+        plt.show(block=False)
+
+    def __box_plot(self):
+        cols = ['algorithm', 'dataLoss_percentage', 'dataIn_percentage', 'time_delta', 'average_cluster_size']
+        df = self.res_df[cols].copy()
+        df['algorithm'] = df['algorithm'].astype("category")
+
+        fig, ax_new = plt.subplots(2, 2, figsize=(18, 10), sharey='none')
+        df.boxplot(by="algorithm", ax=ax_new, layout=(2, 2), grid=False)
+        fig.suptitle(f'Clustering Comparison\n'
+                     f'Agents={self.agents_num}, Missions={self.missions_num}, Max cluster size={self.cluster_size}')
+        plt.savefig(f'results/boxplot_full_{self.tests_num}_tests_{self.timestamp}.pdf')
         plt.show(block=False)
