@@ -23,15 +23,15 @@ def get_random_colors_list(num_colors: int) -> list:
 def show_result_matrix(matrix, clusters, test_description=None):
     colors = get_random_colors_list(len(clusters))
 
-    ax = sns.heatmap(matrix, annot=True)
+    ax = sns.heatmap(matrix, annot=True, fmt='.1f', annot_kws={"fontsize": 8})
 
     for i, cluster in enumerate(clusters):
         if len(cluster) == 1:
-            ax.add_patch(Rectangle((list(cluster)[0], list(cluster)[0]), 1, 1, fill=False, edgecolor=colors[i], lw=3))
+            ax.add_patch(Rectangle((list(cluster)[0], list(cluster)[0]), 1, 1, fill=False, edgecolor=colors[i], lw=2))
         else:
             perm = product(list(cluster), repeat=2)
             for cell in list(perm):
-                ax.add_patch(Rectangle(cell, 1, 1, fill=False, edgecolor=colors[i], lw=3))
+                ax.add_patch(Rectangle(cell, 1, 1, fill=False, edgecolor=colors[i], lw=2))
     plt.title(test_description)
     plt.show()
 

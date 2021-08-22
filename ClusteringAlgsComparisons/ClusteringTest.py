@@ -70,6 +70,15 @@ class ClusteringTest:
         cluster_size = cluster_size
         tests = tests
 
+        results_default_dir = 'results'
+        matrices_default_dir = 'matrices'
+        if not path.isdir(results_default_dir):
+            os.mkdir(results_default_dir)
+            os.mkdir(path.join(results_default_dir, matrices_default_dir))
+        else:
+            if not path.isdir(path.join(results_default_dir, matrices_default_dir)):
+                os.mkdir(path.join(results_default_dir, matrices_default_dir))
+
         if matrices_ids is None:
             matrices_ids = [i for i in range(tests)]
 
@@ -88,7 +97,8 @@ class ClusteringTest:
         ClusteringTest.add_stochastic_algs(alg_dict)
         ClusteringTest.filer_algorithms_to_compare(algo_filter_list, alg_dict)
         comparator.compare(alg_dict, matrices_ids)
-        ClusteringTest.save_results_df(comparator.res_df, "results/results_{}".format(comparator.timestamp))
+        ClusteringTest.save_results_df(comparator.res_df, path.join("results",
+                                                                    "results_{}".format(comparator.timestamp)))
         comparator.show_data()
         plt.show(block=block)
         return comparator.res_df
@@ -155,7 +165,7 @@ class ClusteringTest:
                         figsize = (18, 10))
 
         plt.savefig(f'scatter_full_{tests_num}_tests_{timestamp}.pdf')
-        plt.show()
+        plt.show(block=False)
 
     @staticmethod
     def box_plot(res_df, tests_num, timestamp):
@@ -196,36 +206,34 @@ if __name__ == '__main__':
     #                     'RandomHill_Greedy']
 
     # # Run single config test
-    # os.mkdir("results")
-    # os.mkdir("results/matrices")
-    # ClusteringTest.test_demonstrate_testing_method(agents           = 24,
+    # ClusteringTest.test_demonstrate_testing_method(agents           = 36,
     #                                                missions         = 1,
     #                                                cluster_size     = 8,
-    #                                                tests            = 50,
-    #                                                algo_filter_list = [],
+    #                                                tests            = 5,
+    #                                                algo_filter_list = ['GreedyLoop', 'Hill_Greedy'],
     #                                                matrices_ids     = None)
 
-    # # Run multi-configs test
-    # ClusteringTest.multiple_parameters_testing_method(agents_num_list   = [24, 36, 48],
-    #                                                   cluster_size_list = [4, 8, 16],
-    #                                                   missions          = 1,
-    #                                                   num_tests         = 100,
-    #                                                   algo_filter_list  = [])
+    # Run multi-configs test
+    ClusteringTest.multiple_parameters_testing_method(agents_num_list   = [24, 36, 48],
+                                                      cluster_size_list = [4, 8, 16],
+                                                      missions          = 1,
+                                                      num_tests         = 100,
+                                                      algo_filter_list  = ['GreedyLoop', 'Hill_Greedy', 'Random'])
 
-    # Visualize results
-    results_csv_name = 'results_5_tests_2021_08_19-10:35:13_AM.csv'
-    results_df = pd.read_csv(results_csv_name).drop(columns=['Unnamed: 0'])
-    matrices_dir = 'matrices' + results_csv_name.split('results')[1]
-    crv = ClusteringResultViewer(results_df=results_df, matrices_dir=matrices_dir)
-
-    # Visualize result by index in csv
-    crv.show_single_result_by_index(100)
-
-    # Visualize random result by conditions
-    crv.show_random_single_result_by(algorithms               = ['Blossom', 'Annealing_Greedy'],
-                                     agents_num               = [24, 36],
-                                     cluster_size             = [4, 8],
-                                     max_data_loss_percentage = 0.15,
-                                     max_time_delta_seconds   = 0.1)
+    # # Visualize results
+    # results_csv_name = 'results_100_tests_2021_08_22-10:19:12_AM.csv'
+    # results_df = pd.read_csv(results_csv_name).drop(columns=['Unnamed: 0'])
+    # matrices_dir = 'matrices' + results_csv_name.split('results')[1].split('.csv')[0]
+    # crv = ClusteringResultViewer(results_df=results_df, matrices_dir=matrices_dir)
+    #
+    # # # Visualize result by index in csv
+    # # crv.show_single_result_by_index(100)
+    #
+    # # Visualize random result by conditions
+    # crv.show_random_single_result_by(algorithms               = ['Blossom', 'Annealing_Greedy'],
+    #                                  agents_num               = [36],
+    #                                  cluster_size             = [8],
+    #                                  max_data_loss_percentage = 0.15,
+    #                                  max_time_delta_seconds   = 0.1)
 
     print("Done")

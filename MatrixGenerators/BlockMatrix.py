@@ -33,13 +33,15 @@ def nonnegative_cluster_matrix_with_outliers(clusters_num: int,
                                              in_cluster_element_deviation: float,
                                              outliers_num: int,
                                              outlier_elements_mean: float,
-                                             outliers_element_deviation: float) -> np.array:
+                                             outliers_element_deviation: float,
+                                             remainder: int) -> np.array:
     cluster_matrix = generate_cluster_matrix_with_outliers(clusters_num=clusters_num, cluster_size=cluster_size,
                                                            in_cluster_element_mean=in_cluster_element_mean,
                                                            in_cluster_element_deviation=in_cluster_element_deviation,
                                                            outliers_num=outliers_num,
                                                            outlier_elements_mean=outlier_elements_mean,
-                                                           outliers_element_deviation=outliers_element_deviation)
+                                                           outliers_element_deviation=outliers_element_deviation,
+                                                           remainder=remainder)
 
     np.maximum(cluster_matrix, 0.0, out=cluster_matrix)
 
@@ -52,23 +54,26 @@ def generate_cluster_matrix_with_outliers(clusters_num: int,
                                           in_cluster_element_deviation: float,
                                           outliers_num: int,
                                           outlier_elements_mean: float,
-                                          outliers_element_deviation: float) -> np.array:
-    matrix_row_dim = clusters_num * cluster_size
+                                          outliers_element_deviation: float,
+                                          remainder: int) -> np.array:
+    matrix_row_dim = (clusters_num * cluster_size)  + remainder
 
     result_matrix = _generate_symmetric_gaussian_block_matrix(mean=in_cluster_element_mean,
                                                               deviation=in_cluster_element_deviation,
                                                               clusters_num=clusters_num,
                                                               cluster_size=cluster_size,
-                                                              matrix_row_dim=matrix_row_dim)
+                                                              matrix_row_dim=matrix_row_dim,
+                                                              remainder=remainder)
 
     _add_outliers_to_block_matrix(mean=outlier_elements_mean,
                                   deviation=outliers_element_deviation,
                                   cluster_size=cluster_size,
                                   clusters_num=clusters_num,
                                   outliers_num=outliers_num,
-                                  output_matrix=result_matrix)
+                                  output_matrix=result_matrix,
+                                  remainder=remainder)
 
-    return result_matrix # _permute_symmetrically(result_matrix)
+    return result_matrix  # TODO: revert to _permute_symmetrically(result_matrix)
 
 
 def _permute_symmetrically(matrix: np.array) -> np.array:
@@ -86,8 +91,9 @@ def _permute_symmetrically(matrix: np.array) -> np.array:
 
 
 def _generate_random_indices_in_different_clusters(cluster_size: int,
-                                                   clusters_num: int) -> Tuple[int, int]:
-    dimension = cluster_size * clusters_num
+                                                   clusters_num: int,
+                                                   remainder: int) -> Tuple[int, int]:
+    dimension = (cluster_size * clusters_num) + remainder
 
     while True:
         i = np.random.randint(low=0, high=dimension)
@@ -102,10 +108,12 @@ def _add_outliers_to_block_matrix(mean: float,
                                   cluster_size: int,
                                   clusters_num: int,
                                   outliers_num: int,
-                                  output_matrix: np.array) -> None:
+                                  output_matrix: np.array,
+                                  remainder: int) -> None:
     for _ in range(outliers_num):
         i, j = _generate_random_indices_in_different_clusters(cluster_size=cluster_size,
-                                                              clusters_num=clusters_num)
+                                                              clusters_num=clusters_num,
+                                                              remainder=remainder)
 
         outlier = np.random.normal(loc=mean,
                                    scale=deviation)
@@ -117,7 +125,8 @@ def _generate_symmetric_gaussian_block_matrix(mean: float,
                                               deviation: float,
                                               clusters_num: int,
                                               cluster_size: int,
-                                              matrix_row_dim: np.array) -> np.array:
+                                              matrix_row_dim: np.array,
+                                              remainder: int) -> np.array:
     result_matrix = np.zeros((matrix_row_dim, matrix_row_dim))
     for cluster_index in range(clusters_num):
         # Generate blocks of symmetric gaussian matrices and insert them into the large matrix
@@ -126,6 +135,14 @@ def _generate_symmetric_gaussian_block_matrix(mean: float,
                                                          block_size=cluster_size)
         min_block_index = cluster_index * cluster_size
         max_block_index = (cluster_index + 1) * cluster_size
+        result_matrix[min_block_index: max_block_index, min_block_index: max_block_index] = single_matrix_block
+
+    if remainder > 0:
+        single_matrix_block = _symmetric_gaussian_matrix(mean=mean,
+                                                         deviation=deviation,
+                                                         block_size=remainder)
+        min_block_index = clusters_num * cluster_size
+        max_block_index = min_block_index + remainder
         result_matrix[min_block_index: max_block_index, min_block_index: max_block_index] = single_matrix_block
 
     return result_matrix
