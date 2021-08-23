@@ -64,7 +64,9 @@ class ClusteringResultViewer:
                                      agents_num:               list  = 24,
                                      cluster_size:             list   = 8,
                                      max_data_loss_percentage: float = 0.3,
+                                     min_data_loss_percentage: float = 0,
                                      max_time_delta_seconds:   float = 1.0,
+                                     min_time_delta_seconds:   float = 0.0,
                                      max_average_cluster_size: float = 16.0):
 
         partial_conditions_df = pd.DataFrame(columns=list(self.results_df.columns))
@@ -85,9 +87,17 @@ class ClusteringResultViewer:
             partial_conditions_df = pd.concat([partial_conditions_df, tmp_df])
 
         all_conditions_df = partial_conditions_df
-        all_conditions_df = all_conditions_df[all_conditions_df['dataLoss_percentage'] <= max_data_loss_percentage]
-        all_conditions_df = all_conditions_df[all_conditions_df['time_delta'] <= max_time_delta_seconds]
+        all_conditions_df = all_conditions_df[(min_data_loss_percentage <= all_conditions_df['dataLoss_percentage']) &
+                                              (all_conditions_df['dataLoss_percentage'] <= max_data_loss_percentage)]
+
+        all_conditions_df = all_conditions_df[(min_time_delta_seconds <= all_conditions_df['time_delta']) &
+                                              (all_conditions_df['time_delta'] <= max_time_delta_seconds)]
+
         all_conditions_df = all_conditions_df[all_conditions_df['average_cluster_size'] <= max_average_cluster_size]
+
+        if all_conditions_df.empty:
+            print('No results for set conditions')
+            exit(0)
 
         index = all_conditions_df.sample(1).index[0]
         clusters = self.get_clusters_list(index)

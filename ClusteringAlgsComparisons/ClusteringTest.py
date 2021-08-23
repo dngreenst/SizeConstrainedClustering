@@ -197,6 +197,8 @@ class ClusteringTest:
 
 if __name__ == '__main__':
 
+    test_mode = False  # else (False) - visualize mode
+
     # __ALL_ALGORITHMS = ['Greedy',
     #                     'GreedyLoop',
     #                     'Random',
@@ -205,35 +207,44 @@ if __name__ == '__main__':
     #                     'Hill_Greedy',
     #                     'RandomHill_Greedy']
 
-    # # Run single config test
-    # ClusteringTest.test_demonstrate_testing_method(agents           = 36,
-    #                                                missions         = 1,
-    #                                                cluster_size     = 8,
-    #                                                tests            = 5,
-    #                                                algo_filter_list = ['GreedyLoop', 'Hill_Greedy'],
-    #                                                matrices_ids     = None)
+    if test_mode:
+        multi_test_mode = True  # else (False) - single test mode
 
-    # Run multi-configs test
-    ClusteringTest.multiple_parameters_testing_method(agents_num_list   = [24, 36, 48],
-                                                      cluster_size_list = [4, 8, 16],
-                                                      missions          = 1,
-                                                      num_tests         = 100,
-                                                      algo_filter_list  = ['GreedyLoop', 'Hill_Greedy', 'Random'])
+        if not multi_test_mode:
+            # Run single config test
+            ClusteringTest.test_demonstrate_testing_method(agents           = 36,
+                                                           missions         = 1,
+                                                           cluster_size     = 8,
+                                                           tests            = 5,
+                                                           algo_filter_list = ['GreedyLoop', 'Hill_Greedy'],
+                                                           matrices_ids     = None)
 
-    # # Visualize results
-    # results_csv_name = 'results_100_tests_2021_08_22-10:19:12_AM.csv'
-    # results_df = pd.read_csv(results_csv_name).drop(columns=['Unnamed: 0'])
-    # matrices_dir = 'matrices' + results_csv_name.split('results')[1].split('.csv')[0]
-    # crv = ClusteringResultViewer(results_df=results_df, matrices_dir=matrices_dir)
-    #
-    # # # Visualize result by index in csv
-    # # crv.show_single_result_by_index(100)
-    #
-    # # Visualize random result by conditions
-    # crv.show_random_single_result_by(algorithms               = ['Blossom', 'Annealing_Greedy'],
-    #                                  agents_num               = [36],
-    #                                  cluster_size             = [8],
-    #                                  max_data_loss_percentage = 0.15,
-    #                                  max_time_delta_seconds   = 0.1)
+        # Run multi-configs test
+        ClusteringTest.multiple_parameters_testing_method(agents_num_list   = [24, 36, 48],
+                                                          cluster_size_list = [4, 8, 16],
+                                                          missions          = 1,
+                                                          num_tests         = 100,
+                                                          algo_filter_list  = ['GreedyLoop', 'Hill_Greedy', 'Random'])
+
+    else:
+        # Visualize results
+        results_csv_name = 'results_100_tests_2021_08_22-05:02:50_PM.csv'
+        results_df = pd.read_csv(results_csv_name).drop(columns=['Unnamed: 0'])
+        matrices_dir = 'matrices' + results_csv_name.split('results')[1].split('.csv')[0]
+        crv = ClusteringResultViewer(results_df=results_df, matrices_dir=matrices_dir)
+
+        while True:
+            # # Visualize result by index in csv
+            # crv.show_single_result_by_index(100)
+
+            # Visualize random result by conditions
+            wait_for = input()
+            crv.show_random_single_result_by(algorithms               = ['Blossom'],    # see __ALL_ALGORITHMS
+                                             agents_num               = [24, 36, 48],   # [24, 36, 48]
+                                             cluster_size             = [4, 8, 16],     # [4, 8, 16]
+                                             max_data_loss_percentage = 1.0,            # [0 1]
+                                             min_data_loss_percentage = 0.0,            # [0 1]
+                                             max_time_delta_seconds   = 1.0,            # [0 1]
+                                             min_time_delta_seconds   = 0.0)            # [0 1]
 
     print("Done")

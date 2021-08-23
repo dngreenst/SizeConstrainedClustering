@@ -9,6 +9,7 @@ from typing import List, Set, Tuple, Dict
 import time
 from datetime import datetime
 import math
+import random
 
 from MatrixGenerators import BlockMatrix, ReducedMatrix
 from RegretEstimators import DataLossEstimator
@@ -59,11 +60,11 @@ class ClusteringComparator:
         #                                                               standard_deviation=100)
         clusters_num = int(np.floor(self.agents_num / self.cluster_size))
         remainder = self.agents_num - clusters_num * self.cluster_size
-        in_cluster_mean = 0.0  # [0, 1, 2]
-        in_cluster_deviation = 100.0  # [50, 100, 200] and 0 once with in_cluster_mean=1, outlier_mean=1.1
-        outlier_num = clusters_num
-        outlier_mean = 0.0
-        outlier_deviation = 2 * in_cluster_deviation  # [0.5, 2, 8]
+        in_cluster_mean = random.choice([0, 1, 2])
+        in_cluster_deviation = random.choice([50, 100, 200])  # TODO: =0 (with in_cluster_mean=1, outlier_mean=1.1)
+        outlier_num = random.choice([1, 2, 4]) * clusters_num
+        outlier_mean = random.choice([0, 1, 2])
+        outlier_deviation = random.choice([0.5, 2, 8]) * in_cluster_deviation
         return BlockMatrix.nonnegative_cluster_matrix_with_outliers(clusters_num=clusters_num,
                                                                     cluster_size=self.cluster_size,
                                                                     in_cluster_element_mean=in_cluster_mean,
