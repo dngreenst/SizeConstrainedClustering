@@ -174,7 +174,7 @@ class ClusteringTest:
         df['algorithm'] = df['algorithm'].astype("category")
 
         fig, ax_new = plt.subplots(2, 2, figsize=(18, 10), sharey='none')
-        df.boxplot(by="algorithm", ax=ax_new, layout=(2, 2), grid=False)
+        df.boxplot(by="algorithm", ax=ax_new, layout=(2, 2), grid=False, showmeans=True)
         fig.suptitle(f'Clustering Comparison - Combined results\n{tests_num} tests')
         plt.savefig(f'boxplot_combined_{tests_num}_tests_{timestamp}.pdf')
         plt.show(block=False)
@@ -197,7 +197,7 @@ class ClusteringTest:
 
 if __name__ == '__main__':
 
-    test_mode = False  # else (False) - visualize mode
+    test_mode = True  # else (False) - visualize mode
 
     # __ALL_ALGORITHMS = ['Greedy',
     #                     'GreedyLoop',
@@ -220,28 +220,28 @@ if __name__ == '__main__':
                                                            matrices_ids     = None)
 
         # Run multi-configs test
-        ClusteringTest.multiple_parameters_testing_method(agents_num_list   = [24, 36, 48],
-                                                          cluster_size_list = [4, 8, 16],
+        ClusteringTest.multiple_parameters_testing_method(agents_num_list   = [36, 48, 96],
+                                                          cluster_size_list = [7, 8, 11, 15, 16],
                                                           missions          = 1,
-                                                          num_tests         = 100,
-                                                          algo_filter_list  = ['GreedyLoop', 'Hill_Greedy', 'Random'])
+                                                          num_tests         = 50,
+                                                          algo_filter_list  = ['Hill_Greedy', 'Random'])  # ['GreedyLoop', 'Hill_Greedy', 'Random'])
 
     else:
         # Visualize results
-        results_csv_name = 'results_100_tests_2021_08_22-05:02:50_PM.csv'
+        results_csv_name = 'results_50_tests_2021_09_09-04:42:15_PM.csv'
         results_df = pd.read_csv(results_csv_name).drop(columns=['Unnamed: 0'])
         matrices_dir = 'matrices' + results_csv_name.split('results')[1].split('.csv')[0]
         crv = ClusteringResultViewer(results_df=results_df, matrices_dir=matrices_dir)
 
-        while True:
-            # # Visualize result by index in csv
-            # crv.show_single_result_by_index(100)
+        # # Visualize result by index in csv
+        # crv.show_single_result_by_index(100)
 
+        while True:
             # Visualize random result by conditions
             wait_for = input()
             crv.show_random_single_result_by(algorithms               = ['Blossom'],    # see __ALL_ALGORITHMS
-                                             agents_num               = [24, 36, 48],   # [24, 36, 48]
-                                             cluster_size             = [4, 8, 16],     # [4, 8, 16]
+                                             agents_num               = [24],   # [24, 36, 48]
+                                             cluster_size             = [7, 13],     # [4, 8, 16]
                                              max_data_loss_percentage = 1.0,            # [0 1]
                                              min_data_loss_percentage = 0.0,            # [0 1]
                                              max_time_delta_seconds   = 1.0,            # [0 1]
