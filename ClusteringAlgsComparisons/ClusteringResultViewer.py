@@ -23,15 +23,15 @@ def get_random_colors_list(num_colors: int) -> list:
 def show_result_matrix(matrix, clusters, test_description=None):
     colors = get_random_colors_list(len(clusters))
 
-    ax = sns.heatmap(matrix, annot=True)
+    ax = sns.heatmap(matrix, annot=True, fmt='.1f', annot_kws={"fontsize": 8})
 
     for i, cluster in enumerate(clusters):
         if len(cluster) == 1:
-            ax.add_patch(Rectangle((list(cluster)[0], list(cluster)[0]), 1, 1, fill=False, edgecolor=colors[i], lw=3))
+            ax.add_patch(Rectangle((list(cluster)[0], list(cluster)[0]), 1, 1, fill=False, edgecolor=colors[i], lw=2))
         else:
             perm = product(list(cluster), repeat=2)
             for cell in list(perm):
-                ax.add_patch(Rectangle(cell, 1, 1, fill=False, edgecolor=colors[i], lw=3))
+                ax.add_patch(Rectangle(cell, 1, 1, fill=False, edgecolor=colors[i], lw=2))
     plt.title(test_description)
     plt.show()
 
@@ -64,7 +64,9 @@ class ClusteringResultViewer:
                                      agents_num:               list  = 24,
                                      cluster_size:             list   = 8,
                                      max_data_loss_percentage: float = 0.3,
+                                     min_data_loss_percentage: float = 0,
                                      max_time_delta_seconds:   float = 1.0,
+                                     min_time_delta_seconds:   float = 0.0,
                                      max_average_cluster_size: float = 16.0):
 
         partial_conditions_df = pd.DataFrame(columns=list(self.results_df.columns))
@@ -85,9 +87,17 @@ class ClusteringResultViewer:
             partial_conditions_df = pd.concat([partial_conditions_df, tmp_df])
 
         all_conditions_df = partial_conditions_df
-        all_conditions_df = all_conditions_df[all_conditions_df['dataLoss_percentage'] <= max_data_loss_percentage]
-        all_conditions_df = all_conditions_df[all_conditions_df['time_delta'] <= max_time_delta_seconds]
+        all_conditions_df = all_conditions_df[(min_data_loss_percentage <= all_conditions_df['dataLoss_percentage']) &
+                                              (all_conditions_df['dataLoss_percentage'] <= max_data_loss_percentage)]
+
+        all_conditions_df = all_conditions_df[(min_time_delta_seconds <= all_conditions_df['time_delta']) &
+                                              (all_conditions_df['time_delta'] <= max_time_delta_seconds)]
+
         all_conditions_df = all_conditions_df[all_conditions_df['average_cluster_size'] <= max_average_cluster_size]
+
+        if all_conditions_df.empty:
+            print('No results for set conditions')
+            exit(0)
 
         index = all_conditions_df.sample(1).index[0]
         clusters = self.get_clusters_list(index)

@@ -9,6 +9,7 @@ from typing import List, Set, Tuple, Dict
 import time
 from datetime import datetime
 import math
+import random
 
 from MatrixGenerators import BlockMatrix, ReducedMatrix
 from RegretEstimators import DataLossEstimator
@@ -58,18 +59,20 @@ class ClusteringComparator:
         # return BlockMatrix.generate_block_negative_truncated_gaussian(self.agents_num, self.missions_num,
         #                                                               standard_deviation=100)
         clusters_num = int(np.floor(self.agents_num / self.cluster_size))
-        in_cluster_mean = 0.0  # [0, 1, 2]
-        in_cluster_deviation = 100.0  # [50, 100, 200] and 0 once with in_cluster_mean=1, outlier_mean=1.1
-        outlier_num = clusters_num
-        outlier_mean = 0.0
-        outlier_deviation = 2 * in_cluster_deviation  # [0.5, 2, 8]
+        remainder = self.agents_num - clusters_num * self.cluster_size
+        in_cluster_mean = random.choice([0, 1, 2])
+        in_cluster_deviation = random.choice([50, 100, 200])  # TODO: =0 (with in_cluster_mean=1, outlier_mean=1.1)
+        outlier_num = random.choice([1, 2, 4]) * clusters_num
+        outlier_mean = random.choice([0, 1, 2])
+        outlier_deviation = random.choice([0.5, 2, 8]) * in_cluster_deviation
         return BlockMatrix.nonnegative_cluster_matrix_with_outliers(clusters_num=clusters_num,
                                                                     cluster_size=self.cluster_size,
                                                                     in_cluster_element_mean=in_cluster_mean,
                                                                     in_cluster_element_deviation=in_cluster_deviation,
                                                                     outliers_num=outlier_num,
                                                                     outlier_elements_mean=outlier_mean,
-                                                                    outliers_element_deviation=outlier_deviation)
+                                                                    outliers_element_deviation=outlier_deviation,
+                                                                    remainder=remainder)
 
     def reduce_matrix(self, block_matrix: np.ndarray, lp_norm: float = 1.0) -> np.ndarray:
         return ReducedMatrix.reduce_block_matrix(block_matrix, self.agents_num, self.missions_num, lp_norm)
@@ -93,7 +96,8 @@ class ClusteringComparator:
             block_matrix = self.create_block_matrix() if self.matrix is None else self.matrix
             reduced_matrix = self.reduce_matrix(block_matrix)
             reduced_edge_sum = np.sum(reduced_matrix)
-            np.savetxt(f"results/matrices/{matrices_ids[test_iter]}.csv", block_matrix, delimiter=",")
+            save_path = path.join("results", "matrices", f"{matrices_ids[test_iter]}.csv")
+            np.savetxt(save_path, block_matrix, delimiter=",")
             for key in alg_dict.keys():
                 print("test {0}, Alg: {1}".format(test_iter + 1, key))
                 time_start = time.time()
@@ -162,7 +166,8 @@ class ClusteringComparator:
                         grid    = True,
                         figsize = (18, 10))
 
-        plt.savefig(f'results/scatter_full_{self.tests_num}_tests_{self.timestamp}.pdf')
+        save_path = path.join('results', f'scatter_full_{self.tests_num}_tests_{self.timestamp}.pdf')
+        plt.savefig(save_path)
         plt.show(block=False)
 
     def __box_plot(self):
@@ -174,5 +179,6 @@ class ClusteringComparator:
         df.boxplot(by="algorithm", ax=ax_new, layout=(2, 2), grid=False)
         fig.suptitle(f'Clustering Comparison\n'
                      f'Agents={self.agents_num}, Missions={self.missions_num}, Max cluster size={self.cluster_size}')
-        plt.savefig(f'results/boxplot_full_{self.tests_num}_tests_{self.timestamp}.pdf')
+        save_path = path.join('results', f'boxplot_full_{self.tests_num}_tests_{self.timestamp}.pdf')
+        plt.savefig(save_path)
         plt.show(block=False)
