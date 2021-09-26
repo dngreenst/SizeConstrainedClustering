@@ -15,7 +15,7 @@ def is_equal(l1, l2):
 
 class BlossomCluster:
     @staticmethod
-    def __blossom_match(matrix: np.ndarray, matches_percentage: float = 0.5) -> List[Tuple[int, ...]]:
+    def __blossom_match(matrix: np.ndarray, filter_by_mean: bool = False, matches_percentage: float = 0.75) -> List[Tuple[int, ...]]:
         """Mapping vertex (indexes in matrix) to matches"""
         # init
         graph: nx.Graph = nx.from_numpy_matrix(matrix)
@@ -27,7 +27,12 @@ class BlossomCluster:
         matches_weights.sort(key=lambda tup: tup[1], reverse=True)
 
         # filter weights
-        matches_weights = matches_weights[:-round(matches_percentage * len(matches_weights)) or None]
+        if filter_by_mean:
+            if len(matches_weights) > 0:
+                mean = sum([matches_weights[i][1] for i in range(len(matches_weights))])/len(matches_weights)
+                matches_weights = list(filter(lambda i: i[1] >= mean, matches_weights))
+        else:
+            matches_weights = matches_weights[:-round(matches_percentage * len(matches_weights)) or None]
         matches = [match[0] for match in matches_weights]
 
         # if no matches after filter, return non-matched

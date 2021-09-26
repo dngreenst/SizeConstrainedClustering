@@ -25,8 +25,8 @@ class ClusteringTest:
         total_num_tests = num_tests * len(agents_num_list) * len(cluster_size_list)
         results_dir_name = 'results'
         timestamp = datetime.now().strftime("%Y_%m_%d-%I:%M:%S_%p")
-        text_identifier = f'{results_dir_name}_{num_tests}_tests_{timestamp}'
-        matrices_dir_name = f'matrices_{num_tests}_tests_{timestamp}'
+        text_identifier = f'{results_dir_name}_{num_tests}_tests_{timestamp}'.replace(':', '')
+        matrices_dir_name = f'matrices_{num_tests}_tests_{timestamp}'.replace(':', '')
 
         os.mkdir(matrices_dir_name)
         if path.exists(results_dir_name):
@@ -98,7 +98,8 @@ class ClusteringTest:
         ClusteringTest.filer_algorithms_to_compare(algo_filter_list, alg_dict)
         comparator.compare(alg_dict, matrices_ids)
         ClusteringTest.save_results_df(comparator.res_df, path.join("results",
-                                                                    "results_{}".format(comparator.timestamp)))
+                                                                    "results_{}".format(comparator.timestamp)
+                                                                                .replace(':', '')))
         comparator.show_data()
         plt.show(block=block)
         return comparator.res_df
@@ -164,7 +165,7 @@ class ClusteringTest:
                         grid    = True,
                         figsize = (18, 10))
 
-        plt.savefig(f'scatter_full_{tests_num}_tests_{timestamp}.pdf')
+        plt.savefig(f'scatter_full_{tests_num}_tests_{timestamp}.pdf'.replace(':', ''))
         plt.show(block=False)
 
     @staticmethod
@@ -176,7 +177,7 @@ class ClusteringTest:
         fig, ax_new = plt.subplots(2, 2, figsize=(18, 10), sharey='none')
         df.boxplot(by="algorithm", ax=ax_new, layout=(2, 2), grid=False, showmeans=True)
         fig.suptitle(f'Clustering Comparison - Combined results\n{tests_num} tests')
-        plt.savefig(f'boxplot_combined_{tests_num}_tests_{timestamp}.pdf')
+        plt.savefig(f'boxplot_combined_{tests_num}_tests_{timestamp}.pdf'.replace(':', ''))
         plt.show(block=False)
 
     @staticmethod
@@ -221,10 +222,10 @@ if __name__ == '__main__':
 
         # Run multi-configs test
         ClusteringTest.multiple_parameters_testing_method(agents_num_list   = [36, 48, 96],
-                                                          cluster_size_list = [7, 8, 11, 15, 16],
+                                                          cluster_size_list = [7, 8, 15, 16],
                                                           missions          = 1,
                                                           num_tests         = 50,
-                                                          algo_filter_list  = ['Hill_Greedy', 'Random'])  # ['GreedyLoop', 'Hill_Greedy', 'Random'])
+                                                          algo_filter_list  = ['GreedyLoop', 'Hill_Greedy', 'Random'])  # ['GreedyLoop', 'Hill_Greedy', 'Random'])
 
     else:
         # Visualize results

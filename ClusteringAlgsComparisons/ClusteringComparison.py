@@ -166,7 +166,7 @@ class ClusteringComparator:
                         grid    = True,
                         figsize = (18, 10))
 
-        save_path = path.join('results', f'scatter_full_{self.tests_num}_tests_{self.timestamp}.pdf')
+        save_path = path.join('results', f'scatter_full_{self.tests_num}_tests_{self.timestamp}.pdf'.replace(':', ''))
         plt.savefig(save_path)
         plt.show(block=False)
 
@@ -179,6 +179,6 @@ class ClusteringComparator:
         df.boxplot(by="algorithm", ax=ax_new, layout=(2, 2), grid=False)
         fig.suptitle(f'Clustering Comparison\n'
                      f'Agents={self.agents_num}, Missions={self.missions_num}, Max cluster size={self.cluster_size}')
-        save_path = path.join('results', f'boxplot_full_{self.tests_num}_tests_{self.timestamp}.pdf')
+        save_path = path.join('results', f'boxplot_full_{self.tests_num}_tests_{self.timestamp}.pdf'.replace(':', ''))
         plt.savefig(save_path)
         plt.show(block=False)
