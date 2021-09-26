@@ -11,7 +11,7 @@ from datetime import datetime
 import math
 import random
 
-from MatrixGenerators import BlockMatrix, ReducedMatrix
+from MatrixGenerators import BlockMatrix, ReducedMatrix, ScatterBasedMatrix
 from RegretEstimators import DataLossEstimator
 
 
@@ -61,7 +61,7 @@ class ClusteringComparator:
         clusters_num = int(np.floor(self.agents_num / self.cluster_size))
         remainder = self.agents_num - clusters_num * self.cluster_size
         in_cluster_mean = random.choice([0, 1, 2])
-        in_cluster_deviation = random.choice([50, 100, 200])  # TODO: =0 (with in_cluster_mean=1, outlier_mean=1.1)
+        in_cluster_deviation = random.choice([50, 100, 200])
         outlier_num = random.choice([1, 2, 4]) * clusters_num
         outlier_mean = random.choice([0, 1, 2])
         outlier_deviation = random.choice([0.5, 2, 8]) * in_cluster_deviation
@@ -73,6 +73,14 @@ class ClusteringComparator:
                                                                     outlier_elements_mean=outlier_mean,
                                                                     outliers_element_deviation=outlier_deviation,
                                                                     remainder=remainder)
+
+    def create_scatter_based_matrix(self) -> np.ndarray:
+        return ScatterBasedMatrix.generate_scatter_based_matrix(
+            agents_num                  = self.agents_num,
+            map_size                    = ScatterBasedMatrix.MapShape(random.choice([50, 100, 150]), random.choice([50, 100, 150])),
+            fractal_growth_probability  = random.choice([0.3, 0.5, 0.7]),
+            fractal_deviation           = random.choice([0.5, 1, 2]),
+            cost_function               = ScatterBasedMatrix.negative_exponential_distance)
 
     def reduce_matrix(self, block_matrix: np.ndarray, lp_norm: float = 1.0) -> np.ndarray:
         return ReducedMatrix.reduce_block_matrix(block_matrix, self.agents_num, self.missions_num, lp_norm)
@@ -87,17 +95,24 @@ class ClusteringComparator:
     def __do_regret(matrix: np.ndarray, clusters: List[Set[int]]) -> float:
         return DataLossEstimator.calculate_data_loss(matrix, clusters)
 
-    def compare(self, alg_dict: dict, matrices_ids: list = None):
+    def compare(self, alg_dict: dict, matrices_ids: list = None, matrix_type: str = 'scatter_based'):
         for key in alg_dict.keys():
             self.data[key] = Result(self.tests_num)
 
         for test_iter in np.arange(self.tests_num):
             print("Running test {0}".format(test_iter + 1))
-            block_matrix = self.create_block_matrix() if self.matrix is None else self.matrix
-            reduced_matrix = self.reduce_matrix(block_matrix)
+
+            if matrix_type == 'scatter_based':
+                matrix = self.create_scatter_based_matrix() if self.matrix is None else self.matrix
+            elif matrix_type == 'block':
+                matrix = self.create_block_matrix() if self.matrix is None else self.matrix
+            else:
+                matrix = self.create_block_matrix() if self.matrix is None else self.matrix
+
+            reduced_matrix = self.reduce_matrix(matrix)
             reduced_edge_sum = np.sum(reduced_matrix)
             save_path = path.join("results", "matrices", f"{matrices_ids[test_iter]}.csv")
-            np.savetxt(save_path, block_matrix, delimiter=",")
+            np.savetxt(save_path, matrix, delimiter=",")
             for key in alg_dict.keys():
                 print("test {0}, Alg: {1}".format(test_iter + 1, key))
                 time_start = time.time()
