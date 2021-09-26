@@ -25,8 +25,8 @@ class ClusteringTest:
         total_num_tests = num_tests * len(agents_num_list) * len(cluster_size_list)
         results_dir_name = 'results'
         timestamp = datetime.now().strftime("%Y_%m_%d-%I:%M:%S_%p")
-        text_identifier = f'{results_dir_name}_{num_tests}_tests_{timestamp}'.replace(':', '')
-        matrices_dir_name = f'matrices_{num_tests}_tests_{timestamp}'.replace(':', '')
+        text_identifier = f'{results_dir_name}_{num_tests}_tests_{timestamp}'
+        matrices_dir_name = f'matrices_{num_tests}_tests_{timestamp}'
 
         os.mkdir(matrices_dir_name)
         if path.exists(results_dir_name):
@@ -98,8 +98,7 @@ class ClusteringTest:
         ClusteringTest.filer_algorithms_to_compare(algo_filter_list, alg_dict)
         comparator.compare(alg_dict, matrices_ids)
         ClusteringTest.save_results_df(comparator.res_df, path.join("results",
-                                                                    "results_{}".format(comparator.timestamp)
-                                                                                .replace(':', '')))
+                                                                    "results_{}".format(comparator.timestamp)))
         comparator.show_data()
         plt.show(block=block)
         return comparator.res_df
@@ -165,7 +164,7 @@ class ClusteringTest:
                         grid    = True,
                         figsize = (18, 10))
 
-        plt.savefig(f'scatter_full_{tests_num}_tests_{timestamp}.pdf'.replace(':', ''))
+        plt.savefig(f'scatter_full_{tests_num}_tests_{timestamp}.pdf')
         plt.show(block=False)
 
     @staticmethod
@@ -177,7 +176,7 @@ class ClusteringTest:
         fig, ax_new = plt.subplots(2, 2, figsize=(18, 10), sharey='none')
         df.boxplot(by="algorithm", ax=ax_new, layout=(2, 2), grid=False, showmeans=True)
         fig.suptitle(f'Clustering Comparison - Combined results\n{tests_num} tests')
-        plt.savefig(f'boxplot_combined_{tests_num}_tests_{timestamp}.pdf'.replace(':', ''))
+        plt.savefig(f'boxplot_combined_{tests_num}_tests_{timestamp}.pdf')
         plt.show(block=False)
 
     @staticmethod
@@ -221,7 +220,7 @@ if __name__ == '__main__':
                                                            matrices_ids     = None)
 
         # Run multi-configs test
-        ClusteringTest.multiple_parameters_testing_method(agents_num_list   = [36, 48, 96],
+        ClusteringTest.multiple_parameters_testing_method(agents_num_list   = [24, 36, 48],
                                                           cluster_size_list = [7, 8, 15, 16],
                                                           missions          = 1,
                                                           num_tests         = 50,
@@ -229,7 +228,7 @@ if __name__ == '__main__':
 
     else:
         # Visualize results
-        results_csv_name = 'results_50_tests_2021_09_09-04:42:15_PM.csv'
+        results_csv_name = 'results_50_tests_2021_09_26-02:47:58_PM.csv'
         results_df = pd.read_csv(results_csv_name).drop(columns=['Unnamed: 0'])
         matrices_dir = 'matrices' + results_csv_name.split('results')[1].split('.csv')[0]
         crv = ClusteringResultViewer(results_df=results_df, matrices_dir=matrices_dir)
@@ -240,9 +239,9 @@ if __name__ == '__main__':
         while True:
             # Visualize random result by conditions
             wait_for = input()
-            crv.show_random_single_result_by(algorithms               = ['Blossom'],    # see __ALL_ALGORITHMS
-                                             agents_num               = [24],   # [24, 36, 48]
-                                             cluster_size             = [7, 13],     # [4, 8, 16]
+            crv.show_random_single_result_by(algorithms               = ['Blossom', 'GreedyLoop'],    # see __ALL_ALGORITHMS
+                                             agents_num               = [24, 36, 48],   # [24, 36, 48]
+                                             cluster_size             = [7, 8, 15, 16],     # [4, 8, 16]
                                              max_data_loss_percentage = 1.0,            # [0 1]
                                              min_data_loss_percentage = 0.0,            # [0 1]
                                              max_time_delta_seconds   = 1.0,            # [0 1]
