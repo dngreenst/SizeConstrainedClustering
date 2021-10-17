@@ -27,13 +27,15 @@ class BlossomCluster:
         matches_weights = [(matches[i], matrix[(matches[i])[0]][(matches[i])[1]]) for i in range(len(matches))]
         matches_weights.sort(key=lambda tup: tup[1], reverse=True)
 
-        if len(matches_weights) > 0:
-            mean = sum([matches_weights[i][1] for i in range(len(matches_weights))]) / len(matches_weights)
-            percentile = matches_weights[-math.floor((1 - matches_percent) * len(matches_weights))][1]
+        # get only matches that has more value then max(
+        number_of_matches = len(matches_weights)
+        if number_of_matches > 0:
+            mean = sum([matches_weights[i][1] for i in range(number_of_matches)]) / number_of_matches
+            percentile = matches_weights[-math.floor((1 - matches_percent) * number_of_matches)][1]
             if mean > percentile:
                 matches_weights = list(filter(lambda i: i[1] >= mean, matches_weights))
             else:
-                matches_weights = matches_weights[:-math.floor((1 - matches_percent) * len(matches_weights)) or None]
+                matches_weights = matches_weights[:-math.floor((1 - matches_percent) * number_of_matches) or None]
 
         matches = [match[0] for match in matches_weights]
 

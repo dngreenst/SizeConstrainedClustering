@@ -75,7 +75,7 @@ def generate_cluster_matrix_with_outliers(clusters_num: int,
 
     np.fill_diagonal(result_matrix, 0)
 
-    return result_matrix  # TODO: revert to _permute_symmetrically(result_matrix)
+    return _permute_symmetrically(result_matrix)
 
 
 def _permute_symmetrically(matrix: np.array) -> np.array:

@@ -84,7 +84,7 @@ def _create_mutual_concern_matrix_from_locations(agents_num: int,
                                                  map_size: MapShape,
                                                  cost_function) -> np.array:
 
-    # # TODO: remove DEBUG
+    # # DEBUG (locations scatter map visualization)
     # locations_matrix = np.zeros((int(map_size.horizontal), int(map_size.vertical)))
     # for i in range(len(agent_locations)):
     #     locations_matrix[int(np.floor(agent_locations[i].horizontal))][int(np.floor(agent_locations[i].vertical))] = 1
