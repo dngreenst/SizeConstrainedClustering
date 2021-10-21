@@ -111,6 +111,9 @@ class LocalSearchCluster:
                                                                second_agent_index: int) -> \
             Tuple[List[Set[int]], Dict[int, int], float, bool]:
 
+        if agent_to_cluster_map[first_agent_index] == agent_to_cluster_map[second_agent_index]:
+            return clustering, agent_to_cluster_map, previous_data_loss_score, False
+
         # Extract current agent clusters
         first_agent_cluster = clustering[agent_to_cluster_map[first_agent_index]]
         second_agent_cluster = clustering[agent_to_cluster_map[second_agent_index]]
@@ -146,12 +149,16 @@ class LocalSearchCluster:
                                                 first_agent_index: int,
                                                 second_agent_index: int) -> Tuple[
         List[Set[int]], Dict[int, int], float, bool]:
+
+        if agent_to_cluster_map[first_agent_index] == agent_to_cluster_map[second_agent_index]:
+            return clustering, agent_to_cluster_map, previous_data_loss_score, False
+
         # Extract current agent clusters
         first_agent_cluster = clustering[agent_to_cluster_map[first_agent_index]]
         second_agent_cluster = clustering[agent_to_cluster_map[second_agent_index]]
 
-        score_after_moving_first_agent_to_seconds_cluster = -np.inf
-        score_after_moving_second_agent_to_firsts_cluster = -np.inf
+        score_after_moving_first_agent_to_seconds_cluster = np.inf
+        score_after_moving_second_agent_to_firsts_cluster = np.inf
 
         clustering_after_moving_second_agent_to_firsts_cluster = []
         clustering_after_moving_first_agent_to_seconds_cluster = []
@@ -180,8 +187,8 @@ class LocalSearchCluster:
                                                       clusters=clustering_after_moving_first_agent_to_seconds_cluster)
 
         # Check whether either move improved the clustering
-        if previous_data_loss_score < min(score_after_moving_first_agent_to_seconds_cluster,
-                                          score_after_moving_second_agent_to_firsts_cluster):
+        if previous_data_loss_score <= min(score_after_moving_first_agent_to_seconds_cluster,
+                                           score_after_moving_second_agent_to_firsts_cluster):
             # If no move was possible, or if neither improved the clustering, return the original clustering.
             return clustering, agent_to_cluster_map, previous_data_loss_score, False
 
@@ -202,6 +209,10 @@ class LocalSearchCluster:
                                                    first_agent_index: int,
                                                    second_agent_index: int) -> \
             Tuple[List[Set[int]], Dict[int, int], float, bool]:
+
+        if agent_to_cluster_map[first_agent_index] == agent_to_cluster_map[second_agent_index]:
+            return clustering, agent_to_cluster_map, previous_data_loss_score, False
+
         original_first_agent_cluster_index = agent_to_cluster_map[first_agent_index]
         original_second_agent_cluster_index = agent_to_cluster_map[second_agent_index]
 
