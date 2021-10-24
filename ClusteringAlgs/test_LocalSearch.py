@@ -280,3 +280,57 @@ class test_LocalSearch(unittest.TestCase):
                 second_agent_index=2)
 
         self.assertTrue(can_clustering_be_improved_by_moving_an_agent)
+
+    def test_create_agent_to_clustering_map_clustering_does_not_contain_agent(self):
+        clusters = [{1, 2, 3}, {4, 5}, {6}, {7, 8, 9}]  # agent 0 is missing
+
+        with self.assertRaises(RuntimeError):
+            LocalSearchCluster._create_agent_to_clustering_map(agents_num=10, initial_clustering=clusters)
+
+    def test_create_agent_to_cluster_map_cluster_map_and_clustering_match(self):
+        clusters = [{0}, {1, 2, 3}, {4, 5}, {6}, {7, 8, 9}]
+
+        agent_to_cluster_map = LocalSearchCluster._create_agent_to_clustering_map(agents_num=10,
+                                                                                  initial_clustering=clusters)
+
+        # Check that clusters are contained in agent_to_cluster_map
+        for cluster_index, cluster in enumerate(clusters):
+            for agent in cluster:
+                if agent_to_cluster_map[agent] != cluster_index:
+                    self.fail(f'Agent {agent}\'s cluster by the cluster map does not match the actual cluster index.\n'
+                              f'agent_to_cluster_map = {agent_to_cluster_map}\n'
+                              f'agent_to_cluster_map[{agent}] = {agent_to_cluster_map[agent]}\n'
+                              f'cluster_index = {cluster_index}\n'
+                              f'clusters = {clusters}\n')
+
+        for agent, cluster_index in agent_to_cluster_map.items():
+            if agent not in clusters[cluster_index]:
+                self.fail(f'Agent {agent}\'s cluster by the cluster map does not match the actual cluster index.\n'
+                          f'agent_to_cluster_map = {agent_to_cluster_map}\n'
+                          f'agent_to_cluster_map[{agent}] = {agent_to_cluster_map[agent]}\n'
+                          f'cluster_index = {cluster_index}\n'
+                          f'clusters = {clusters}\n')
+
+    def test_create_agent_to_cluster_map_cluster_map_and_clustering_match_2(self):
+        clusters = [{0, 4, 5}, {1, 2, 8}, {}, {6, 3}, {7, 9}]
+
+        agent_to_cluster_map = LocalSearchCluster._create_agent_to_clustering_map(agents_num=10,
+                                                                                  initial_clustering=clusters)
+
+        # Check that clusters are contained in agent_to_cluster_map
+        for cluster_index, cluster in enumerate(clusters):
+            for agent in cluster:
+                if agent_to_cluster_map[agent] != cluster_index:
+                    self.fail(f'Agent {agent}\'s cluster by the cluster map does not match the actual cluster index.\n'
+                              f'agent_to_cluster_map = {agent_to_cluster_map}\n'
+                              f'agent_to_cluster_map[{agent}] = {agent_to_cluster_map[agent]}\n'
+                              f'cluster_index = {cluster_index}\n'
+                              f'clusters = {clusters}\n')
+
+        for agent, cluster_index in agent_to_cluster_map.items():
+            if agent not in clusters[cluster_index]:
+                self.fail(f'Agent {agent}\'s cluster by the cluster map does not match the actual cluster index.\n'
+                          f'agent_to_cluster_map = {agent_to_cluster_map}\n'
+                          f'agent_to_cluster_map[{agent}] = {agent_to_cluster_map[agent]}\n'
+                          f'cluster_index = {cluster_index}\n'
+                          f'clusters = {clusters}\n')
