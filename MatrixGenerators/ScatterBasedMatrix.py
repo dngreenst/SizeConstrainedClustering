@@ -62,12 +62,12 @@ def _generate_agent_locations(agents_num: int,
 
 def _generate_location_with_normal_distribution(mean_location: MapLocation, deviation: float) -> MapLocation:
     numpy_agent_location = \
-        np.random.normal(loc=np.array([mean_location.horizontal, mean_location.vertical]),
+        np.random.normal(loc=mean_location.to_numpy(),
                          scale=deviation)
     return MapLocation(horizontal=numpy_agent_location[0], vertical=numpy_agent_location[1])
 
 
-def _choose_agent_uniformly(agent_locations: List[MapLocation]) -> MapLocation:
+def _choose_agent_uniformly(agent_locations: List[MapLocation]) -> (MapLocation, int):
     current_agents_num = len(agent_locations)
     chosen_agent_index = np.random.randint(low=0, high=current_agents_num)
     return agent_locations[chosen_agent_index], chosen_agent_index

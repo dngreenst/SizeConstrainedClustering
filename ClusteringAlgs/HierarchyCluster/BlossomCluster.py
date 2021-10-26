@@ -16,7 +16,7 @@ def is_equal(l1, l2):
 
 class BlossomCluster:
     @staticmethod
-    def __blossom_match(matrix: np.ndarray, matches_percent: float = 0.50) -> List[Tuple[int, ...]]:
+    def __blossom_match(matrix: np.ndarray, matches_percent: float = 0.50) -> List[Tuple[int, int]]:
         """Mapping vertex (indexes in matrix) to matches"""
         # init
         graph: nx.Graph = nx.from_numpy_matrix(matrix)
@@ -68,8 +68,7 @@ class BlossomCluster:
 
     @staticmethod
     def cluster(matrix: np.ndarray, cluster_size: int) -> List[Set[int]]:
-        n = matrix.shape[0]
-        clusters = [{i} for i in range(n)]
+        clusters = [{i} for i in range(matrix.shape[0])]
         while True:
             matches_init = [(i, i) for i in range(matrix.shape[0])]
             clusters, matches = BlossomCluster.cluster_once(clusters, matrix)
@@ -77,9 +76,7 @@ class BlossomCluster:
                 break
             matrix = ReducedMatrix.coarse_matrix(matrix, matches, 1.0)
             for i in range(matrix.shape[0]):
-                for j in range(matrix.shape[0]):
-                    if i == j or i > j:
-                        continue
+                for j in range(i):
                     if len(clusters[i]) + len(clusters[j]) > cluster_size:
                         matrix[i][j] = 0
                         matrix[j][i] = 0

@@ -8,7 +8,6 @@ import numpy as np
 import pandas as pd
 import functools
 import matplotlib.pyplot as plt
-from ClusteringAlgs.HierarchyCluster import TreeJoin
 from ClusteringAlgs.StochasticCluster import StochasticCluster
 from datetime import datetime
 import shutil
@@ -24,72 +23,59 @@ class ClusteringTest:
     def multiple_parameters_testing_method(agents_num_list, cluster_size_list, missions, num_tests, algo_filter_list):
         total_num_tests = num_tests * len(agents_num_list) * len(cluster_size_list)
         results_dir_name = 'results'
+        results_dir_path = os.path.join('output', results_dir_name)
         timestamp = datetime.now().strftime("%Y_%m_%d-%I:%M:%S_%p")
         text_identifier = f'{results_dir_name}_{num_tests}_tests_{timestamp}'
         matrices_dir_name = f'matrices_{num_tests}_tests_{timestamp}'
+        matrices_dir_path = os.path.join('output', matrices_dir_name)
 
-        os.mkdir(matrices_dir_name)
-        if path.exists(results_dir_name):
-            os.rename(results_dir_name, f'{results_dir_name}_prev')
+        os.makedirs(matrices_dir_path, exist_ok=True)
+        if path.exists(results_dir_path):
+            os.rename(results_dir_path, os.path.join('output', f'{results_dir_name}_prev'))
 
         total_res_df = pd.DataFrame()
         for agents in agents_num_list:
             for cluster_size in cluster_size_list:
                 matrices_ids = [uuid.uuid1() for i in range(num_tests)]
-                os.mkdir(results_dir_name)
-                os.mkdir(os.path.join(results_dir_name, 'matrices'))
+                os.makedirs(results_dir_path, exist_ok=True)
+                os.mkdir(os.path.join(results_dir_path, 'matrices'))
                 curr_df = ClusteringTest.test_demonstrate_testing_method(agents           = agents,
                                                                          missions         = missions,
                                                                          cluster_size     = cluster_size,
                                                                          tests            = num_tests,
-                                                                         block            = False,
+                                                                         plot_block       = False,
                                                                          algo_filter_list = algo_filter_list,
                                                                          matrices_ids     = matrices_ids)
                 total_res_df = pd.concat([total_res_df, curr_df])
 
                 # copy test matrices
-                source_folder = os.path.join(results_dir_name, 'matrices')
-                destination_folder = matrices_dir_name
+                source_folder = os.path.join(results_dir_path, 'matrices')
+                destination_folder = matrices_dir_path
                 for file_name in os.listdir(source_folder):
                     source = os.path.join(source_folder, file_name)
                     destination = os.path.join(destination_folder, file_name)
                     if os.path.isfile(source):
                         shutil.copy(source, destination)
 
-                os.rename(results_dir_name, f'{text_identifier}_{agents}_agents_{cluster_size}_cluster_size')
+                os.rename(results_dir_path, os.path.join('output', f'{text_identifier}_{agents}_agents_{cluster_size}_cluster_size'))
 
-        ClusteringTest.save_results_df(total_res_df, text_identifier)
+        ClusteringTest.save_results_df(total_res_df, os.path.join('output', text_identifier))
         ClusteringTest.scatter_plot(total_res_df, total_num_tests, timestamp)
         ClusteringTest.box_plot(total_res_df, total_num_tests, timestamp)
         # plt.show()
 
     @staticmethod
-    def test_demonstrate_testing_method(agents=24, missions=1, cluster_size=8, tests=50, block=True, algo_filter_list=[], matrices_ids=None) -> pd.DataFrame():
-        agents = agents
-        missions = missions
-        cluster_size = cluster_size
-        tests = tests
+    def test_demonstrate_testing_method(agents=24, missions=1, cluster_size=8, tests=50, plot_block=True,
+                                        algo_filter_list=[], matrices_ids=None) -> pd.DataFrame():
 
-        results_default_dir = 'results'
-        matrices_default_dir = 'matrices'
-        if not path.isdir(results_default_dir):
-            os.mkdir(results_default_dir)
-            os.mkdir(path.join(results_default_dir, matrices_default_dir))
-        else:
-            if not path.isdir(path.join(results_default_dir, matrices_default_dir)):
-                os.mkdir(path.join(results_default_dir, matrices_default_dir))
+        results_dir = 'results'
+        results_dir_path = os.path.join('output', results_dir)
+        matrices_dir = 'matrices'
+        os.makedirs(path.join(results_dir_path, matrices_dir), exist_ok=True)
 
         if matrices_ids is None:
             matrices_ids = [i for i in range(tests)]
 
-        join_method_dict = dict()
-        join_method_dict["random"] = TreeJoin.max_random_join
-        join_method_dict["size"] = TreeJoin.join_tree
-        join_method_dict["value"] = TreeJoin.value_join_tree
-
-        fidler_method_dict = dict()
-        fidler_method_dict["agglom"] = FidlerVecCluster.agglomerative_partition
-        fidler_method_dict["kmeans"] = FidlerVecCluster.k_means_partition
         comparator = ClusteringComparator(agents_num=agents, missions_num=missions, cluster_size=cluster_size, tests_num=tests)
         alg_dict = dict()
         alg_dict["Random"] = RandomAssignment.random_permutation_clustering_from_matrix
@@ -97,10 +83,10 @@ class ClusteringTest:
         ClusteringTest.add_stochastic_algs(alg_dict)
         ClusteringTest.filer_algorithms_to_compare(algo_filter_list, alg_dict)
         comparator.compare(alg_dict, matrices_ids)
-        ClusteringTest.save_results_df(comparator.res_df, path.join("results",
+        ClusteringTest.save_results_df(comparator.res_df, path.join(results_dir_path,
                                                                     "results_{}".format(comparator.timestamp)))
         comparator.show_data()
-        plt.show(block=block)
+        plt.show(block=plot_block)
         return comparator.res_df
 
     @staticmethod
@@ -164,7 +150,7 @@ class ClusteringTest:
                         grid    = True,
                         figsize = (18, 10))
 
-        plt.savefig(f'scatter_full_{tests_num}_tests_{timestamp}.pdf')
+        plt.savefig(os.path.join('output', f'scatter_full_{tests_num}_tests_{timestamp}.pdf'))
         plt.show(block=False)
 
     @staticmethod
@@ -176,7 +162,7 @@ class ClusteringTest:
         fig, ax_new = plt.subplots(2, 2, figsize=(18, 10), sharey='none')
         df.boxplot(by="algorithm", ax=ax_new, layout=(2, 2), grid=False, showmeans=True)
         fig.suptitle(f'Clustering Comparison - Combined results\n{tests_num} tests')
-        plt.savefig(f'boxplot_combined_{tests_num}_tests_{timestamp}.pdf')
+        plt.savefig(os.path.join('output', f'boxplot_combined_{tests_num}_tests_{timestamp}.pdf'))
         plt.show(block=False)
 
     @staticmethod
@@ -220,11 +206,12 @@ if __name__ == '__main__':
                                                            matrices_ids     = None)
 
         # Run multi-configs test
-        ClusteringTest.multiple_parameters_testing_method(agents_num_list   = [36],
-                                                          cluster_size_list = [7],
-                                                          missions          = 1,
-                                                          num_tests         = 100,
-                                                          algo_filter_list  = ['Hill_Greedy'])  # ['GreedyLoop', 'Hill_Greedy', 'Random'])
+        else:
+            ClusteringTest.multiple_parameters_testing_method(agents_num_list   = [16, 24],
+                                                              cluster_size_list = [7],
+                                                              missions          = 1,
+                                                              num_tests         = 5,
+                                                              algo_filter_list  = ['Hill_Greedy'])  # ['GreedyLoop', 'Hill_Greedy', 'Random'])
 
     else:
         # Visualize results

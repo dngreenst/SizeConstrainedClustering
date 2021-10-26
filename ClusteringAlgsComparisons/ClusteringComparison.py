@@ -1,10 +1,7 @@
-import os
 from os import path
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-# import matplotlib
-# matplotlib.use('TkAgg')
 from typing import List, Set, Tuple, Dict
 import time
 from datetime import datetime
@@ -109,24 +106,24 @@ class ClusteringComparator:
             else:
                 matrix = self.create_block_matrix() if self.matrix is None else self.matrix
 
-            reduced_matrix = self.reduce_matrix(matrix)
-            reduced_edge_sum = np.sum(reduced_matrix)
-            save_path = path.join("results", "matrices", f"{matrices_ids[test_iter]}.csv")
+            edge_sum = np.sum(matrix)
+            results_dir_path = path.join('output', 'results')
+            save_path = path.join(results_dir_path, "matrices", f"{matrices_ids[test_iter]}.csv")
             np.savetxt(save_path, matrix, delimiter=",")
             for key in alg_dict.keys():
                 print("test {0}, Alg: {1}".format(test_iter + 1, key))
                 time_start = time.time()
-                clusters = self.__do_cluster(reduced_matrix, alg_dict[key])
+                clusters = self.__do_cluster(matrix, alg_dict[key])
                 time_delta = time.time() - time_start
                 average_cluster_size = self.agents_num / len(clusters)
-                regret = self.__do_regret(reduced_matrix, clusters)
+                regret = self.__do_regret(matrix, clusters)
                 """setting data"""
                 result: Result = self.data[key]
                 result.dataLoss[test_iter] = regret
-                result.dataLoss_percentage[test_iter] = regret / reduced_edge_sum
+                result.dataLoss_percentage[test_iter] = regret / edge_sum
                 result.average_cluster_size[test_iter] = average_cluster_size
                 result.time_delta[test_iter] = time_delta
-                result.dataIn_percentage[test_iter] = (reduced_edge_sum - regret) / reduced_edge_sum
+                result.dataIn_percentage[test_iter] = (edge_sum - regret) / edge_sum
                 iter_res = pd.Series([test_iter+1,
                                       matrices_ids[test_iter],
                                       key,
@@ -151,7 +148,6 @@ class ClusteringComparator:
         return ax
 
     def show_data(self):
-        # self.__line_plot()
         self.__scatter_plot()
         self.__box_plot()
 
@@ -181,7 +177,7 @@ class ClusteringComparator:
                         grid    = True,
                         figsize = (18, 10))
 
-        save_path = path.join('results', f'scatter_full_{self.tests_num}_tests_{self.timestamp}.pdf'.replace(':', ''))
+        save_path = path.join(path.join('output', 'results'), f'scatter_full_{self.tests_num}_tests_{self.timestamp}.pdf'.replace(':', ''))
         plt.savefig(save_path)
         plt.show(block=False)
 
@@ -194,6 +190,6 @@ class ClusteringComparator:
         df.boxplot(by="algorithm", ax=ax_new, layout=(2, 2), grid=False)
         fig.suptitle(f'Clustering Comparison\n'
                      f'Agents={self.agents_num}, Missions={self.missions_num}, Max cluster size={self.cluster_size}')
-        save_path = path.join('results', f'boxplot_full_{self.tests_num}_tests_{self.timestamp}.pdf'.replace(':', ''))
+        save_path = path.join(path.join('output', 'results'), f'boxplot_full_{self.tests_num}_tests_{self.timestamp}.pdf'.replace(':', ''))
         plt.savefig(save_path)
         plt.show(block=False)
