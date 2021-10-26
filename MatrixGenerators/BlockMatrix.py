@@ -139,6 +139,8 @@ def _generate_symmetric_gaussian_block_matrix(mean: float,
         max_block_index = (cluster_index + 1) * cluster_size
         result_matrix[min_block_index: max_block_index, min_block_index: max_block_index] = single_matrix_block
 
+    # TODO: get agents_num as input to this function and calc remainder here instead of passing if all the way.
+    #  use it to move if statement logic into the above for loop.
     if remainder > 0:
         single_matrix_block = _symmetric_gaussian_matrix(mean=mean,
                                                          deviation=deviation,

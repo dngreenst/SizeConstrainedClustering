@@ -8,6 +8,7 @@ from datetime import datetime
 import math
 import random
 
+from common.enums.EMatrixType import EMatrixType
 from MatrixGenerators import BlockMatrix, ReducedMatrix, ScatterBasedMatrix
 from RegretEstimators import DataLossEstimator
 
@@ -92,16 +93,16 @@ class ClusteringComparator:
     def __do_regret(matrix: np.ndarray, clusters: List[Set[int]]) -> float:
         return DataLossEstimator.calculate_data_loss(matrix, clusters)
 
-    def compare(self, alg_dict: dict, matrices_ids: list = None, matrix_type: str = 'scatter_based'):
+    def compare(self, alg_dict: dict, matrices_ids: list = None, matrix_type: EMatrixType = EMatrixType.SCATTER):
         for key in alg_dict.keys():
             self.data[key] = Result(self.tests_num)
 
         for test_iter in np.arange(self.tests_num):
             print("Running test {0}".format(test_iter + 1))
 
-            if matrix_type == 'scatter_based':
+            if matrix_type == EMatrixType.SCATTER:
                 matrix = self.create_scatter_based_matrix() if self.matrix is None else self.matrix
-            elif matrix_type == 'block':
+            elif matrix_type == EMatrixType.BLOCK:
                 matrix = self.create_block_matrix() if self.matrix is None else self.matrix
             else:
                 matrix = self.create_block_matrix() if self.matrix is None else self.matrix

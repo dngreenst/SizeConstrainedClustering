@@ -16,11 +16,11 @@ from os import path
 import uuid
 
 import networkx as nx
-
+from common.enums.EMatrixType import EMatrixType
 
 class ClusteringTest:
     @staticmethod
-    def multiple_parameters_testing_method(agents_num_list, cluster_size_list, missions, num_tests, algo_filter_list):
+    def multiple_parameters_testing_method(algo_whitelist, agents_num_list, cluster_size_list, missions, num_tests, matrix_type):
         total_num_tests = num_tests * len(agents_num_list) * len(cluster_size_list)
         results_dir_name = 'results'
         results_dir_path = os.path.join('output', results_dir_name)
@@ -39,13 +39,14 @@ class ClusteringTest:
                 matrices_ids = [uuid.uuid1() for i in range(num_tests)]
                 os.makedirs(results_dir_path, exist_ok=True)
                 os.mkdir(os.path.join(results_dir_path, 'matrices'))
-                curr_df = ClusteringTest.test_demonstrate_testing_method(agents           = agents,
+                curr_df = ClusteringTest.test_demonstrate_testing_method(algo_whitelist   = algo_whitelist,
+                                                                         agents           = agents,
                                                                          missions         = missions,
                                                                          cluster_size     = cluster_size,
                                                                          tests            = num_tests,
                                                                          plot_block       = False,
-                                                                         algo_filter_list = algo_filter_list,
-                                                                         matrices_ids     = matrices_ids)
+                                                                         matrices_ids     = matrices_ids,
+                                                                         matrix_type      = matrix_type)
                 total_res_df = pd.concat([total_res_df, curr_df])
 
                 # copy test matrices
@@ -65,8 +66,8 @@ class ClusteringTest:
         # plt.show()
 
     @staticmethod
-    def test_demonstrate_testing_method(agents=24, missions=1, cluster_size=8, tests=50, plot_block=True,
-                                        algo_filter_list=[], matrices_ids=None) -> pd.DataFrame():
+    def test_demonstrate_testing_method(algo_whitelist, agents=24, missions=1, cluster_size=8, tests=50,
+                                        plot_block=True, matrices_ids=None, matrix_type=EMatrixType.SCATTER) -> pd.DataFrame():
 
         results_dir = 'results'
         results_dir_path = os.path.join('output', results_dir)
@@ -81,8 +82,8 @@ class ClusteringTest:
         alg_dict["Random"] = RandomAssignment.random_permutation_clustering_from_matrix
         alg_dict["Blossom"] = BlossomCluster.BlossomCluster.cluster
         ClusteringTest.add_stochastic_algs(alg_dict)
-        ClusteringTest.filer_algorithms_to_compare(algo_filter_list, alg_dict)
-        comparator.compare(alg_dict, matrices_ids)
+        ClusteringTest.filer_algorithms_to_compare(algo_whitelist, alg_dict)
+        comparator.compare(alg_dict, matrices_ids, matrix_type=matrix_type)
         ClusteringTest.save_results_df(comparator.res_df, path.join(results_dir_path,
                                                                     "results_{}".format(comparator.timestamp)))
         comparator.show_data()
@@ -175,9 +176,10 @@ class ClusteringTest:
         grouped_res_df.describe().to_csv(base_name + '_describe.csv')
 
     @staticmethod
-    def filer_algorithms_to_compare(algo_filter_list, alg_dict):
-        for key in algo_filter_list:
-            if key in alg_dict:
+    def filer_algorithms_to_compare(algo_whitelist, alg_dict):
+        alg_dict_orig = alg_dict.copy()
+        for key in alg_dict_orig:
+            if key not in algo_whitelist:
                 del alg_dict[key]
 
 
@@ -185,33 +187,39 @@ if __name__ == '__main__':
 
     test_mode = True  # else (False) - visualize mode
 
-    # __ALL_ALGORITHMS = ['Greedy',
-    #                     'GreedyLoop',
-    #                     'Random',
-    #                     'Blossom',
-    #                     'Annealing_Greedy',
-    #                     'Hill_Greedy',
-    #                     'RandomHill_Greedy']
-
     if test_mode:
         multi_test_mode = True  # else (False) - single test mode
 
         if not multi_test_mode:
             # Run single config test
-            ClusteringTest.test_demonstrate_testing_method(agents           = 36,
+            ClusteringTest.test_demonstrate_testing_method(algo_whitelist    = ['Greedy',
+                                                                                'GreedyLoop',
+                                                                                'Random',
+                                                                                'Blossom',
+                                                                                'Annealing_Greedy',
+                                                                                'Hill_Greedy',
+                                                                                'RandomHill_Greedy'],
+                                                           agents           = 36,
                                                            missions         = 1,
                                                            cluster_size     = 8,
                                                            tests            = 5,
-                                                           algo_filter_list = ['GreedyLoop', 'Hill_Greedy'],
-                                                           matrices_ids     = None)
+                                                           matrices_ids     = None,
+                                                           matrix_type      = EMatrixType.SCATTER)
 
         # Run multi-configs test
         else:
-            ClusteringTest.multiple_parameters_testing_method(agents_num_list   = [16, 24],
+            ClusteringTest.multiple_parameters_testing_method(algo_whitelist    = ['Greedy',
+                                                                                   'GreedyLoop',
+                                                                                   'Random',
+                                                                                   'Blossom',
+                                                                                   'Annealing_Greedy',
+                                                                                   'Hill_Greedy',
+                                                                                   'RandomHill_Greedy'],
+                                                              agents_num_list   = [16, 24],
                                                               cluster_size_list = [7],
                                                               missions          = 1,
                                                               num_tests         = 5,
-                                                              algo_filter_list  = ['Hill_Greedy'])  # ['GreedyLoop', 'Hill_Greedy', 'Random'])
+                                                              matrix_type       = EMatrixType.SCATTER)
 
     else:
         # Visualize results
@@ -220,18 +228,15 @@ if __name__ == '__main__':
         matrices_dir = 'matrices' + results_csv_name.split('results')[1].split('.csv')[0]
         crv = ClusteringResultViewer(results_df=results_df, matrices_dir=matrices_dir)
 
-        # # Visualize result by index in csv
-        # crv.show_single_result_by_index(100)
-
         while True:
             # Visualize random result by conditions
             wait_for = input()
-            crv.show_random_single_result_by(algorithms               = ['Blossom'],    # see __ALL_ALGORITHMS
-                                             agents_num               = [36, 48, 96],   # [24, 36, 48]
-                                             cluster_size             = [7, 8, 15, 16],     # [4, 8, 16]
-                                             max_data_loss_percentage = 1.0,            # [0 1]
-                                             min_data_loss_percentage = 0.0,            # [0 1]
+            crv.show_random_single_result_by(algorithms               = ['Blossom'],
+                                             agents_num               = [36, 48, 96],    # [24, 36, 48]
+                                             cluster_size             = [7, 8, 15, 16],  # [4, 8, 16]
+                                             max_data_loss_percentage = 1.0,             # [0 1]
+                                             min_data_loss_percentage = 0.0,             # [0 1]
                                              max_time_delta_seconds   = 30.0,            # [0 1]
-                                             min_time_delta_seconds   = 0.0)            # [0 1]
+                                             min_time_delta_seconds   = 0.0)             # [0 1]
 
     print("Done")
