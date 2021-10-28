@@ -6,28 +6,18 @@ import networkx as nx
 from MatrixGenerators import ReducedMatrix
 
 
-def is_equal(l1, l2):
-    l1.sort(key=len)
-    l2.sort(key=len)
-    if l1 == l2:
-        return True
-    return False
-
-
 class MaxWeightCluster:
     @staticmethod
-    def __maxweight_match(matrix: np.ndarray, matches_percent: float = 0.50) -> List[Tuple[int, int]]:
+    def __maxweight_match(matrix: np.ndarray) -> List[Tuple[int, int]]:
         """Mapping vertex (indexes in matrix) to matches"""
-        # init
         graph: nx.Graph = nx.from_numpy_matrix(matrix)
-        all_nodes = set(np.arange(matrix.shape[0]))
-
-        # get matches and weights
         matches = list(nx.max_weight_matching(graph))
+        return matches
+
+    @staticmethod
+    def __choose_matches(matrix: np.ndarray, matches: List[Tuple[int, int]], matches_percent: float = 0.50) -> List[Tuple[int, int]]:
         matches_weights = [(matches[i], matrix[(matches[i])[0]][(matches[i])[1]]) for i in range(len(matches))]
         matches_weights.sort(key=lambda tup: tup[1], reverse=True)
-
-        # get only matches that has more value then max(
         number_of_matches = len(matches_weights)
         if number_of_matches > 0:
             mean = sum([matches_weights[i][1] for i in range(number_of_matches)]) / number_of_matches
@@ -38,21 +28,17 @@ class MaxWeightCluster:
                 matches_weights = matches_weights[:-math.floor((1 - matches_percent) * number_of_matches) or None]
 
         matches = [match[0] for match in matches_weights]
-
-        # if no matches after filter, return non-matched
-        matched_list = [set(m[0]) for m in matches_weights]
-        if not matched_list:
-            for node in all_nodes:
-                matches.append((node, node))
-            return matches
-
-        # else - return matched
-        matched = set.union(*matched_list)
-        if len(matched) != len(all_nodes):
-            for node in all_nodes.difference(matched):
-                matches.append((node, node))
-
         return matches
+
+    @staticmethod
+    def __create_unifications_list(matrix: np.ndarray, chosen_matches: List[Tuple[int, int]]):
+        unifications_list = chosen_matches.copy()
+        all_nodes_set = set(np.arange(matrix.shape[0]))
+        matched_list = [set(m) for m in chosen_matches]
+        matched_set = set.union(*matched_list) if len(matched_list) > 0 else set()
+        for node in all_nodes_set.difference(matched_set):
+            unifications_list.append((node, node))
+        return unifications_list
 
     @staticmethod
     def group_clusters(clusters: List[Set[int]], groups_by_index: List) -> List[Set[int]]:
@@ -62,17 +48,21 @@ class MaxWeightCluster:
         return new_clusters
 
     @staticmethod
-    def cluster_once(clusters: List[Set[int]], matrix: np.ndarray) -> Tuple[List[Set[int]], List[Tuple[int, ...]]]:
+    def cluster_once(clusters: List[Set[int]],
+                     matrix: np.ndarray) -> Tuple[List[Set[int]], List[Tuple[int, int]], bool]:
         matches = MaxWeightCluster.__maxweight_match(matrix)
-        return MaxWeightCluster.group_clusters(clusters, matches), matches
+        chosen_matches = MaxWeightCluster.__choose_matches(matrix, matches, matches_percent=0.50)
+        current_iter_unifications = MaxWeightCluster.__create_unifications_list(matrix, chosen_matches)
+        clusters = MaxWeightCluster.group_clusters(clusters, current_iter_unifications)
+        cluster_was_successful = len(chosen_matches) > 0
+        return clusters, current_iter_unifications, cluster_was_successful
 
     @staticmethod
     def cluster(matrix: np.ndarray, cluster_size: int) -> List[Set[int]]:
         clusters = [{i} for i in range(matrix.shape[0])]
         while True:
-            matches_init = [(i, i) for i in range(matrix.shape[0])]
-            clusters, matches = MaxWeightCluster.cluster_once(clusters, matrix)
-            if is_equal(matches, matches_init):
+            clusters, matches, cluster_was_successful = MaxWeightCluster.cluster_once(clusters, matrix)
+            if not cluster_was_successful:
                 break
             matrix = ReducedMatrix.coarse_matrix(matrix, matches, 1.0)
             for i in range(matrix.shape[0]):
