@@ -14,26 +14,32 @@ class LocalSearchCluster:
                                 initial_clustering: Optional[List[Set[int]]]) -> List[Set[int]]:
         agents_num = matrix.shape[0]
 
-        clustering_might_be_improvable = True
-
         if initial_clustering is None:
             # If no clustering was provided, create a clustering of singletons.
             initial_clustering = []
             for agent_index in range(agents_num):
                 initial_clustering.append({agent_index})
 
-        current_agent_to_cluster_map = LocalSearchCluster._create_agent_to_clustering_map(
-            agents_num=agents_num,
-            initial_clustering=initial_clustering)
-
         current_clustering = initial_clustering
 
-        curr_data_loss_score = DataLossEstimator.calculate_data_loss(matrix=matrix, clusters=current_clustering)
+        current_agent_to_cluster_map = \
+            LocalSearchCluster._create_agent_to_clustering_map(agents_num=agents_num,
+                                                               initial_clustering=current_clustering)
+
+        curr_data_loss_score = DataLossEstimator.calculate_data_loss(matrix=matrix,
+                                                                     clusters=current_clustering)
+
+        clustering_might_be_improvable = True
 
         while clustering_might_be_improvable:
             clustering_might_be_improvable = False
 
             for first_agent_index in range(agents_num):
+
+                if clustering_might_be_improvable:
+                    # We have already found a local improvement - start a new search
+                    break
+
                 for second_agent_index in range(first_agent_index):
                     new_clustering, new_agent_to_cluster_map, data_loss_after_unification, was_unification_successful = \
                         LocalSearchCluster._attempt_clustering_improvement_by_cluster_unification(
