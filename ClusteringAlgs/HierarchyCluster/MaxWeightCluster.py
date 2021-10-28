@@ -14,9 +14,9 @@ def is_equal(l1, l2):
     return False
 
 
-class BlossomCluster:
+class MaxWeightCluster:
     @staticmethod
-    def __blossom_match(matrix: np.ndarray, matches_percent: float = 0.50) -> List[Tuple[int, int]]:
+    def __maxweight_match(matrix: np.ndarray, matches_percent: float = 0.50) -> List[Tuple[int, int]]:
         """Mapping vertex (indexes in matrix) to matches"""
         # init
         graph: nx.Graph = nx.from_numpy_matrix(matrix)
@@ -63,15 +63,15 @@ class BlossomCluster:
 
     @staticmethod
     def cluster_once(clusters: List[Set[int]], matrix: np.ndarray) -> Tuple[List[Set[int]], List[Tuple[int, ...]]]:
-        matches = BlossomCluster.__blossom_match(matrix)
-        return BlossomCluster.group_clusters(clusters, matches), matches
+        matches = MaxWeightCluster.__maxweight_match(matrix)
+        return MaxWeightCluster.group_clusters(clusters, matches), matches
 
     @staticmethod
     def cluster(matrix: np.ndarray, cluster_size: int) -> List[Set[int]]:
         clusters = [{i} for i in range(matrix.shape[0])]
         while True:
             matches_init = [(i, i) for i in range(matrix.shape[0])]
-            clusters, matches = BlossomCluster.cluster_once(clusters, matrix)
+            clusters, matches = MaxWeightCluster.cluster_once(clusters, matrix)
             if is_equal(matches, matches_init):
                 break
             matrix = ReducedMatrix.coarse_matrix(matrix, matches, 1.0)
@@ -83,6 +83,6 @@ class BlossomCluster:
         return clusters
 
 
-def blossom_cluster_with_missions(block_matrix: np.ndarray, n: int, m: int, cluster_size: int) -> List[Set[int]]:
+def maxweight_cluster_with_missions(block_matrix: np.ndarray, n: int, m: int, cluster_size: int) -> List[Set[int]]:
     matrix = ReducedMatrix.reduce_block_matrix(block_matrix, n, m, cluster_size)
-    return BlossomCluster.cluster(matrix, cluster_size)
+    return MaxWeightCluster.cluster(matrix, cluster_size)

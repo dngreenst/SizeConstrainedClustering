@@ -2,7 +2,7 @@ from typing import List, Set, Tuple
 import numpy as np
 from anytree import Node, search
 from MatrixGenerators import  ReducedMatrix
-from ClusteringAlgs.HierarchyCluster import BlossomCluster
+from ClusteringAlgs.HierarchyCluster import MaxWeightCluster
 from RegretEstimators import DataLossEstimator
 import copy
 

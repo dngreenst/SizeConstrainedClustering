@@ -40,7 +40,7 @@ class ClusteringResultViewer:
     __ALL_ALGORITHMS = ['Greedy',
                         'GreedyLoop',
                         'Random',
-                        'Blossom',
+                        'MaxWeight',
                         'Annealing_Greedy',
                         'Hill_Greedy',
                         'RandomHill_Greedy']

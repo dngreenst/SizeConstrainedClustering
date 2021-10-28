@@ -1,6 +1,6 @@
 from ClusteringAlgsComparisons.ClusteringComparison import ClusteringComparator
 from ClusteringAlgs import RandomAssignment
-from ClusteringAlgs.HierarchyCluster import BlossomCluster
+from ClusteringAlgs.HierarchyCluster import MaxWeightCluster
 from ClusteringAlgs.HierarchyCluster import FidlerVecCluster
 from ClusteringAlgs.HierarchyCluster import SpectralClustering
 from ClusteringResultViewer import ClusteringResultViewer
@@ -80,7 +80,7 @@ class ClusteringTest:
         comparator = ClusteringComparator(agents_num=agents, missions_num=missions, cluster_size=cluster_size, tests_num=tests)
         alg_dict = dict()
         alg_dict["Random"] = RandomAssignment.random_permutation_clustering_from_matrix
-        alg_dict["Blossom"] = BlossomCluster.BlossomCluster.cluster
+        alg_dict["MaxWeight"] = MaxWeightCluster.MaxWeightCluster.cluster
         ClusteringTest.add_stochastic_algs(alg_dict)
         ClusteringTest.filer_algorithms_to_compare(algo_whitelist, alg_dict)
         comparator.compare(alg_dict, matrices_ids, matrix_type=matrix_type)
@@ -195,7 +195,7 @@ if __name__ == '__main__':
             ClusteringTest.test_demonstrate_testing_method(algo_whitelist    = ['Greedy',
                                                                                 'GreedyLoop',
                                                                                 'Random',
-                                                                                'Blossom',
+                                                                                'MaxWeight',
                                                                                 'Annealing_Greedy',
                                                                                 'Hill_Greedy',
                                                                                 'RandomHill_Greedy'],
@@ -211,14 +211,14 @@ if __name__ == '__main__':
             ClusteringTest.multiple_parameters_testing_method(algo_whitelist    = ['Greedy',
                                                                                    'GreedyLoop',
                                                                                    'Random',
-                                                                                   'Blossom',
+                                                                                   'MaxWeight',
                                                                                    'Annealing_Greedy',
                                                                                    'Hill_Greedy',
                                                                                    'RandomHill_Greedy'],
-                                                              agents_num_list   = [16, 24],
+                                                              agents_num_list   = [24],
                                                               cluster_size_list = [7],
                                                               missions          = 1,
-                                                              num_tests         = 5,
+                                                              num_tests         = 20,
                                                               matrix_type       = EMatrixType.SCATTER)
 
     else:
@@ -231,7 +231,7 @@ if __name__ == '__main__':
         while True:
             # Visualize random result by conditions
             wait_for = input()
-            crv.show_random_single_result_by(algorithms               = ['Blossom'],
+            crv.show_random_single_result_by(algorithms               = ['MaxWeight'],
                                              agents_num               = [36, 48, 96],    # [24, 36, 48]
                                              cluster_size             = [7, 8, 15, 16],  # [4, 8, 16]
                                              max_data_loss_percentage = 1.0,             # [0 1]
