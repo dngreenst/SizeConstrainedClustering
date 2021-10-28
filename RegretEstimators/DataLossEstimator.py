@@ -1,12 +1,12 @@
-
 import unittest
+from typing import List, Set
 
 import numpy as np
-from typing import List, Set
+
 from MatrixGenerators import ReducedMatrix
 
 
-def cluster_validity(matrix:np.ndarray, clusters: List[Set[int]]):
+def cluster_validity(matrix: np.ndarray, clusters: List[Set[int]]):
     # Validate that the np.array is a matrix, and that it is square
     if len(matrix.shape) != 2 or matrix.shape[0] != matrix.shape[1]:
         raise RuntimeError(f'Only square matrices are supported')
@@ -60,15 +60,52 @@ def calculate_data_loss(matrix: np.ndarray, clusters: List[Set[int]], lp_norm: f
     return np.linalg.norm(lost_data, lp_norm)
 
 
+def calculate_data_gain_by_moving_agent_between_clusters(matrix: np.array, agent: int,
+                                                         origin_cluster: Set[int],
+                                                         destination_cluster: Set[int]) -> float:
+    # The matrix is symmetric
+    weights_between_agent_and_origin = \
+        2 * (np.sum(matrix[agent, member_of_origin_cluster]
+                    for member_of_origin_cluster in origin_cluster) - matrix[agent, agent])
+
+    weights_between_agent_and_destination = \
+        2 * (np.sum(matrix[agent, member_of_destination_cluster]
+                    for member_of_destination_cluster in destination_cluster))
+
+    return weights_between_agent_and_destination - weights_between_agent_and_origin
+
+
+def calculate_data_gain_by_switch_agents_between_clusters(matrix: np.array,
+                                                          first_agent: int,
+                                                          first_agents_origin_cluster: Set[int],
+                                                          second_agent: int,
+                                                          second_agents_origin_cluster: Set[int]) -> float:
+    gain_by_moving_first_agent_to_seconds_cluster = \
+        calculate_data_gain_by_moving_agent_between_clusters(
+            matrix=matrix,
+            agent=first_agent,
+            origin_cluster=first_agents_origin_cluster,
+            destination_cluster=second_agents_origin_cluster) - 2 * matrix[first_agent, second_agent]
+
+    gain_by_moving_second_agent_to_firsts_cluster = \
+        calculate_data_gain_by_moving_agent_between_clusters(
+            matrix=matrix,
+            agent=second_agent,
+            origin_cluster=second_agents_origin_cluster,
+            destination_cluster=first_agents_origin_cluster) - 2 * matrix[first_agent, second_agent]
+
+    return gain_by_moving_first_agent_to_seconds_cluster + gain_by_moving_second_agent_to_firsts_cluster
+
+
 def block_matrix_calculate_data_loss(block_matrix: np.array, n: int, m: int, clusters: List[Set[int]],
                                      lp_norm: float = 1.0) -> float:
     if n <= 0 or m <= 0:
         raise RuntimeError(f'Expected n, m > 0, received n={n}, m={m}')
 
-    if len(block_matrix.shape) != 2 or block_matrix.shape[0] != block_matrix.shape[1] or block_matrix.shape[0] != n*m:
+    if len(block_matrix.shape) != 2 or block_matrix.shape[0] != block_matrix.shape[1] or block_matrix.shape[0] != n * m:
         raise RuntimeError(f'Expected a square matrix made of m*m blocks.\n'
                            f'block_matrix.shape={block_matrix.shape}\n'
-                           f'n*m={n*m}\n')
+                           f'n*m={n * m}\n')
     return calculate_data_loss(ReducedMatrix.reduce_block_matrix(block_matrix, n, m, lp_norm), clusters, 1.0)
 
 

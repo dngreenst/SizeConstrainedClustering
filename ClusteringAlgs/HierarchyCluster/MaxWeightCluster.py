@@ -3,6 +3,8 @@ import math
 import numpy as np
 import networkx as nx
 
+from ClusteringAlgs.LocalSearch import LocalSearchCluster
+from ClusteringAlgsComparisons.PerformanceProfiler import profile_func
 from MatrixGenerators import ReducedMatrix
 
 
@@ -59,17 +61,19 @@ class MaxWeightCluster:
 
     @staticmethod
     def cluster(matrix: np.ndarray, cluster_size: int) -> List[Set[int]]:
-        clusters = [{i} for i in range(matrix.shape[0])]
+        curr_matrix = matrix.copy()
+        clusters = [{i} for i in range(curr_matrix.shape[0])]
         while True:
-            clusters, matches, cluster_was_successful = MaxWeightCluster.cluster_once(clusters, matrix)
+            clusters, matches, cluster_was_successful = MaxWeightCluster.cluster_once(clusters, curr_matrix)
             if not cluster_was_successful:
                 break
-            matrix = ReducedMatrix.coarse_matrix(matrix, matches, 1.0)
-            for i in range(matrix.shape[0]):
+            curr_matrix = ReducedMatrix.coarse_matrix(curr_matrix, matches, 1.0)
+            for i in range(curr_matrix.shape[0]):
                 for j in range(i):
                     if len(clusters[i]) + len(clusters[j]) > cluster_size:
-                        matrix[i][j] = 0
-                        matrix[j][i] = 0
+                        curr_matrix[i][j] = 0
+                        curr_matrix[j][i] = 0
+        clusters = profile_func(lambda: LocalSearchCluster.local_search_clustering(matrix=matrix, initial_clustering=clusters, cluster_size=cluster_size))
         return clusters
 
 

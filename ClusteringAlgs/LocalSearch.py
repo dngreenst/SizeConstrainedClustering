@@ -163,48 +163,57 @@ class LocalSearchCluster:
         first_agent_cluster = clustering[agent_to_cluster_map[first_agent_index]]
         second_agent_cluster = clustering[agent_to_cluster_map[second_agent_index]]
 
-        score_after_moving_first_agent_to_seconds_cluster = np.inf
-        score_after_moving_second_agent_to_firsts_cluster = np.inf
-
-        clustering_after_moving_second_agent_to_firsts_cluster = []
-        clustering_after_moving_first_agent_to_seconds_cluster = []
+        gain_by_moving_second_agent_to_firsts_cluster = -np.inf
+        gain_by_moving_first_agent_to_seconds_cluster = -np.inf
 
         # Check whether second agent can be moved into first agent's cluster
         if len(first_agent_cluster) < cluster_size:
-            # If the second agent can be moved, generate the new clustering and calculate the new data loss score
-            clustering_after_moving_second_agent_to_firsts_cluster = copy.deepcopy(clustering)
-            clustering_after_moving_second_agent_to_firsts_cluster[agent_to_cluster_map[first_agent_index]].add(
-                second_agent_index)
-            clustering_after_moving_second_agent_to_firsts_cluster[agent_to_cluster_map[second_agent_index]].remove(
-                second_agent_index)
-            score_after_moving_second_agent_to_firsts_cluster = \
-                DataLossEstimator.calculate_data_loss(matrix=matrix, clusters=clustering)
+            gain_by_moving_second_agent_to_firsts_cluster = \
+                DataLossEstimator.calculate_data_gain_by_moving_agent_between_clusters(
+                    matrix=matrix,
+                    agent=second_agent_index,
+                    origin_cluster=second_agent_cluster,
+                    destination_cluster=first_agent_cluster)
 
         # Check whether the first agent can be moved into the second agent's cluster
         if len(second_agent_cluster) < cluster_size:
-            # If the first agent can be moved, generate the new clustering and calculate the new data loss score
-            clustering_after_moving_first_agent_to_seconds_cluster = copy.deepcopy(clustering)
-            clustering_after_moving_first_agent_to_seconds_cluster[agent_to_cluster_map[second_agent_index]].add(
-                first_agent_index)
-            clustering_after_moving_first_agent_to_seconds_cluster[agent_to_cluster_map[first_agent_index]].remove(
-                first_agent_index)
-            score_after_moving_first_agent_to_seconds_cluster = \
-                DataLossEstimator.calculate_data_loss(matrix=matrix,
-                                                      clusters=clustering_after_moving_first_agent_to_seconds_cluster)
+            gain_by_moving_first_agent_to_seconds_cluster = \
+                DataLossEstimator.calculate_data_gain_by_moving_agent_between_clusters(
+                    matrix=matrix,
+                    agent=first_agent_index,
+                    origin_cluster=first_agent_cluster,
+                    destination_cluster=second_agent_cluster)
 
         # Check whether either move improved the clustering
-        if previous_data_loss_score <= min(score_after_moving_first_agent_to_seconds_cluster,
-                                           score_after_moving_second_agent_to_firsts_cluster):
+        if max(gain_by_moving_first_agent_to_seconds_cluster, gain_by_moving_second_agent_to_firsts_cluster) <= 0:
             # If no move was possible, or if neither improved the clustering, return the original clustering.
             return clustering, agent_to_cluster_map, previous_data_loss_score, False
 
         # One of the new clusterings improved the data loss - return the best one.
-        if score_after_moving_second_agent_to_firsts_cluster < score_after_moving_first_agent_to_seconds_cluster:
+        if gain_by_moving_second_agent_to_firsts_cluster > gain_by_moving_first_agent_to_seconds_cluster:
+            clustering[agent_to_cluster_map[first_agent_index]].add(
+                second_agent_index)
+            clustering[agent_to_cluster_map[second_agent_index]].remove(
+                second_agent_index)
             agent_to_cluster_map[second_agent_index] = agent_to_cluster_map[first_agent_index]
-            return clustering_after_moving_second_agent_to_firsts_cluster, agent_to_cluster_map, score_after_moving_second_agent_to_firsts_cluster, True
+            data_loss_after_moving_second_agent_to_firsts_cluster = previous_data_loss_score - gain_by_moving_second_agent_to_firsts_cluster
+            LocalSearchCluster._verify_data_loss_correctness(matrix=matrix,
+                                                             clustering=clustering,
+                                                             previous_data_loss=previous_data_loss_score,
+                                                             presumed_data_loss=data_loss_after_moving_second_agent_to_firsts_cluster)
+            return clustering, agent_to_cluster_map, data_loss_after_moving_second_agent_to_firsts_cluster, True
 
+        clustering[agent_to_cluster_map[second_agent_index]].add(
+            first_agent_index)
+        clustering[agent_to_cluster_map[first_agent_index]].remove(
+            first_agent_index)
         agent_to_cluster_map[first_agent_index] = agent_to_cluster_map[second_agent_index]
-        return clustering_after_moving_first_agent_to_seconds_cluster, agent_to_cluster_map, score_after_moving_first_agent_to_seconds_cluster, True
+        score_after_moving_first_agent_to_seconds_cluster = previous_data_loss_score - gain_by_moving_first_agent_to_seconds_cluster
+        LocalSearchCluster._verify_data_loss_correctness(matrix=matrix,
+                                                         clustering=clustering,
+                                                         previous_data_loss=previous_data_loss_score,
+                                                         presumed_data_loss=score_after_moving_first_agent_to_seconds_cluster)
+        return clustering, agent_to_cluster_map, score_after_moving_first_agent_to_seconds_cluster, True
 
     @staticmethod
     def _attempt_switching_agents_between_clusters(matrix: np.array,
@@ -222,23 +231,47 @@ class LocalSearchCluster:
         original_first_agent_cluster_index = agent_to_cluster_map[first_agent_index]
         original_second_agent_cluster_index = agent_to_cluster_map[second_agent_index]
 
-        clustering_after_agent_exchange = copy.deepcopy(clustering)
+        gain_by_switching_agents_between_clusters = \
+            DataLossEstimator.calculate_data_gain_by_switch_agents_between_clusters(
+                matrix=matrix,
+                first_agent=first_agent_index,
+                second_agent=second_agent_index,
+                first_agents_origin_cluster=clustering[original_first_agent_cluster_index],
+                second_agents_origin_cluster=clustering[original_second_agent_cluster_index])
 
-        # Remove the first agent from its original cluster, and add the second to it.
-        clustering_after_agent_exchange[original_first_agent_cluster_index].remove(first_agent_index)
-        clustering_after_agent_exchange[original_first_agent_cluster_index].add(second_agent_index)
+        if gain_by_switching_agents_between_clusters > 0:
+            # Remove the first agent from its original cluster, and add the second to it.
+            clustering[original_first_agent_cluster_index].remove(first_agent_index)
+            clustering[original_first_agent_cluster_index].add(second_agent_index)
 
-        # Remove the second agent from its original cluster, and add the first to it.
-        clustering_after_agent_exchange[original_second_agent_cluster_index].remove(second_agent_index)
-        clustering_after_agent_exchange[original_second_agent_cluster_index].add(first_agent_index)
+            # Remove the second agent from its original cluster, and add the first to it.
+            clustering[original_second_agent_cluster_index].remove(second_agent_index)
+            clustering[original_second_agent_cluster_index].add(first_agent_index)
 
-        data_loss_after_exchange = DataLossEstimator.calculate_data_loss(matrix=matrix,
-                                                                         clusters=clustering_after_agent_exchange)
-
-        if data_loss_after_exchange < previous_data_loss_score:
             agent_to_cluster_map[first_agent_index] = original_second_agent_cluster_index
             agent_to_cluster_map[second_agent_index] = original_first_agent_cluster_index
 
-            return clustering_after_agent_exchange, agent_to_cluster_map, data_loss_after_exchange, True
+            data_loss_after_exchange = previous_data_loss_score - gain_by_switching_agents_between_clusters
+            LocalSearchCluster._verify_data_loss_correctness(matrix=matrix,
+                                                             clustering=clustering,
+                                                             previous_data_loss=previous_data_loss_score,
+                                                             presumed_data_loss=data_loss_after_exchange)
+            return clustering, agent_to_cluster_map, data_loss_after_exchange, True
 
         return clustering, agent_to_cluster_map, previous_data_loss_score, False
+
+    @staticmethod
+    def _verify_data_loss_correctness(matrix: np.array, clustering: List[Set[int]], previous_data_loss: float, presumed_data_loss: float):
+        new_data_loss = DataLossEstimator.calculate_data_loss(matrix=matrix, clusters=clustering)
+        if not np.isclose(presumed_data_loss, new_data_loss):
+            raise RuntimeError(f'The presumed data loss is {presumed_data_loss}, but the actual data loss is {new_data_loss}.\n '
+                               f'clustering {clustering} \n'
+                               f'and matrix {matrix}\n')
+
+        if new_data_loss >= previous_data_loss:
+            raise RuntimeError(f'Unexpectedly, new_data_loss is not smaller the the previous data loss!\n'
+                               f'new_data_loss = {new_data_loss}\n'
+                               f'previous_data_loss = {previous_data_loss}\n'
+                               f'clustering = {clustering}\n'
+                               f'matrix = {matrix}')
+
