@@ -95,15 +95,15 @@ class LocalSearchCluster:
         return current_clustering
 
     @staticmethod
-    def _create_agent_to_clustering_map(agents_num, initial_clustering) -> Dict[int, int]:
+    def _create_agent_to_clustering_map(agents_num: int, initial_clustering: List[Set[int]]) -> Dict[int, int]:
         agent_to_cluster_map: Dict[int, int] = {}
-        for agent_index in range(agents_num):
+        for agent in range(agents_num):
             for cluster_index, cluster in enumerate(initial_clustering):
-                if agent_index in cluster:
-                    agent_to_cluster_map[agent_index] = cluster_index
+                if agent in cluster:
+                    agent_to_cluster_map[agent] = cluster_index
                     break
-            if agent_index not in agent_to_cluster_map.keys():
-                raise RuntimeError(f'Unexpectedly, there is no cluster for agent {agent_index} in {initial_clustering}')
+            if agent not in agent_to_cluster_map.keys():
+                raise RuntimeError(f'Unexpectedly, there is no cluster for agent {agent} in {initial_clustering}')
 
         return agent_to_cluster_map
 
