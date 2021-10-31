@@ -197,10 +197,6 @@ class LocalSearchCluster:
                 second_agent_index)
             agent_to_cluster_map[second_agent_index] = agent_to_cluster_map[first_agent_index]
             data_loss_after_moving_second_agent_to_firsts_cluster = previous_data_loss_score - gain_by_moving_second_agent_to_firsts_cluster
-            LocalSearchCluster._verify_data_loss_correctness(matrix=matrix,
-                                                             clustering=clustering,
-                                                             previous_data_loss=previous_data_loss_score,
-                                                             presumed_data_loss=data_loss_after_moving_second_agent_to_firsts_cluster)
             return clustering, agent_to_cluster_map, data_loss_after_moving_second_agent_to_firsts_cluster, True
 
         clustering[agent_to_cluster_map[second_agent_index]].add(
@@ -209,10 +205,6 @@ class LocalSearchCluster:
             first_agent_index)
         agent_to_cluster_map[first_agent_index] = agent_to_cluster_map[second_agent_index]
         score_after_moving_first_agent_to_seconds_cluster = previous_data_loss_score - gain_by_moving_first_agent_to_seconds_cluster
-        LocalSearchCluster._verify_data_loss_correctness(matrix=matrix,
-                                                         clustering=clustering,
-                                                         previous_data_loss=previous_data_loss_score,
-                                                         presumed_data_loss=score_after_moving_first_agent_to_seconds_cluster)
         return clustering, agent_to_cluster_map, score_after_moving_first_agent_to_seconds_cluster, True
 
     @staticmethod
@@ -252,26 +244,6 @@ class LocalSearchCluster:
             agent_to_cluster_map[second_agent_index] = original_first_agent_cluster_index
 
             data_loss_after_exchange = previous_data_loss_score - gain_by_switching_agents_between_clusters
-            LocalSearchCluster._verify_data_loss_correctness(matrix=matrix,
-                                                             clustering=clustering,
-                                                             previous_data_loss=previous_data_loss_score,
-                                                             presumed_data_loss=data_loss_after_exchange)
             return clustering, agent_to_cluster_map, data_loss_after_exchange, True
 
         return clustering, agent_to_cluster_map, previous_data_loss_score, False
-
-    @staticmethod
-    def _verify_data_loss_correctness(matrix: np.array, clustering: List[Set[int]], previous_data_loss: float, presumed_data_loss: float):
-        new_data_loss = DataLossEstimator.calculate_data_loss(matrix=matrix, clusters=clustering)
-        if not np.isclose(presumed_data_loss, new_data_loss):
-            raise RuntimeError(f'The presumed data loss is {presumed_data_loss}, but the actual data loss is {new_data_loss}.\n '
-                               f'clustering {clustering} \n'
-                               f'and matrix {matrix}\n')
-
-        if new_data_loss >= previous_data_loss:
-            raise RuntimeError(f'Unexpectedly, new_data_loss is not smaller the the previous data loss!\n'
-                               f'new_data_loss = {new_data_loss}\n'
-                               f'previous_data_loss = {previous_data_loss}\n'
-                               f'clustering = {clustering}\n'
-                               f'matrix = {matrix}')
-
