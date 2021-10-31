@@ -2,7 +2,7 @@ from typing import List, Set, Tuple
 import math
 import numpy as np
 import networkx as nx
-
+from ClusteringAlgs.LocalSearch import LocalSearchCluster
 from MatrixGenerators import ReducedMatrix
 
 
@@ -59,17 +59,21 @@ class MaxWeightCluster:
 
     @staticmethod
     def cluster(matrix: np.ndarray, cluster_size: int) -> List[Set[int]]:
-        clusters = [{i} for i in range(matrix.shape[0])]
+        current_matrix = matrix.copy()
+        clusters = [{i} for i in range(current_matrix.shape[0])]
         while True:
-            clusters, matches, cluster_was_successful = MaxWeightCluster.cluster_once(clusters, matrix)
+            clusters, matches, cluster_was_successful = MaxWeightCluster.cluster_once(clusters, current_matrix)
             if not cluster_was_successful:
                 break
-            matrix = ReducedMatrix.coarse_matrix(matrix, matches, 1.0)
-            for i in range(matrix.shape[0]):
+            current_matrix = ReducedMatrix.coarse_matrix(current_matrix, matches, 1.0)
+            for i in range(current_matrix.shape[0]):
                 for j in range(i):
                     if len(clusters[i]) + len(clusters[j]) > cluster_size:
-                        matrix[i][j] = 0
-                        matrix[j][i] = 0
+                        current_matrix[i][j] = 0
+                        current_matrix[j][i] = 0
+        clusters = LocalSearchCluster.local_search_clustering(matrix=matrix,
+                                                              cluster_size=cluster_size,
+                                                              initial_clustering=clusters)
         return clusters
 
 

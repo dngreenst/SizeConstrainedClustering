@@ -18,6 +18,7 @@ import uuid
 import networkx as nx
 from common.enums.EMatrixType import EMatrixType
 
+
 class ClusteringTest:
     @staticmethod
     def multiple_parameters_testing_method(algo_whitelist, agents_num_list, cluster_size_list, missions, num_tests, matrix_type):
@@ -208,17 +209,13 @@ if __name__ == '__main__':
 
         # Run multi-configs test
         else:
-            ClusteringTest.multiple_parameters_testing_method(algo_whitelist    = ['Greedy',
-                                                                                   'GreedyLoop',
+            ClusteringTest.multiple_parameters_testing_method(algo_whitelist    = ['GreedyLoop',
                                                                                    'Random',
-                                                                                   'MaxWeight',
-                                                                                   'Annealing_Greedy',
-                                                                                   'Hill_Greedy',
-                                                                                   'RandomHill_Greedy'],
-                                                              agents_num_list   = [24],
-                                                              cluster_size_list = [7],
+                                                                                   'MaxWeight'],
+                                                              agents_num_list   = [36, 48, 96],
+                                                              cluster_size_list = [7, 8, 15, 16],
                                                               missions          = 1,
-                                                              num_tests         = 20,
+                                                              num_tests         = 50,
                                                               matrix_type       = EMatrixType.SCATTER)
 
     else:
