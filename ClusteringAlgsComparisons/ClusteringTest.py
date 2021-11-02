@@ -208,35 +208,31 @@ if __name__ == '__main__':
 
         # Run multi-configs test
         else:
-            ClusteringTest.multiple_parameters_testing_method(algo_whitelist    = ['Greedy',
-                                                                                   'GreedyLoop',
+            ClusteringTest.multiple_parameters_testing_method(algo_whitelist    = ['GreedyLoop',
                                                                                    'Random',
-                                                                                   'MaxWeight',
-                                                                                   'Annealing_Greedy',
-                                                                                   'Hill_Greedy',
-                                                                                   'RandomHill_Greedy'],
-                                                              agents_num_list   = [24],
-                                                              cluster_size_list = [7],
+                                                                                   'MaxWeight'],
+                                                              agents_num_list   = [36, 48, 96],
+                                                              cluster_size_list = [7, 8, 15, 16],
                                                               missions          = 1,
-                                                              num_tests         = 20,
+                                                              num_tests         = 50,
                                                               matrix_type       = EMatrixType.SCATTER)
 
     else:
         # Visualize results
-        results_csv_name = 'results_10_tests_2021_10_14-01:14:59_PM.csv'
+        results_csv_name = os.path.join('output', 'results_50_tests_2021_10_31-01:27:33_PM.csv')
         results_df = pd.read_csv(results_csv_name).drop(columns=['Unnamed: 0'])
-        matrices_dir = 'matrices' + results_csv_name.split('results')[1].split('.csv')[0]
+        matrices_dir = os.path.join('output', 'matrices' + results_csv_name.split('results')[1].split('.csv')[0])
         crv = ClusteringResultViewer(results_df=results_df, matrices_dir=matrices_dir)
 
         while True:
             # Visualize random result by conditions
             wait_for = input()
             crv.show_random_single_result_by(algorithms               = ['MaxWeight'],
-                                             agents_num               = [36, 48, 96],    # [24, 36, 48]
-                                             cluster_size             = [7, 8, 15, 16],  # [4, 8, 16]
+                                             agents_num               = [96],    # [24, 36, 48]
+                                             cluster_size             = [15, 16],        # [4, 8, 16]
                                              max_data_loss_percentage = 1.0,             # [0 1]
-                                             min_data_loss_percentage = 0.0,             # [0 1]
+                                             min_data_loss_percentage = 0.1,             # [0 1]
                                              max_time_delta_seconds   = 30.0,            # [0 1]
-                                             min_time_delta_seconds   = 0.0)             # [0 1]
+                                             min_time_delta_seconds   = 1.0)             # [0 1]
 
     print("Done")

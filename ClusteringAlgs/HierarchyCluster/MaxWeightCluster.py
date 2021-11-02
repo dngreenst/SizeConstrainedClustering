@@ -1,10 +1,10 @@
-import math
 from typing import List, Set, Tuple
-
-import networkx as nx
+import math
 import numpy as np
+import networkx as nx
 
 from ClusteringAlgs.LocalSearch import LocalSearchCluster
+from ClusteringAlgsComparisons.PerformanceProfiler import profile_func
 from MatrixGenerators import ReducedMatrix
 
 
@@ -17,8 +17,7 @@ class MaxWeightCluster:
         return matches
 
     @staticmethod
-    def __choose_matches(matrix: np.ndarray, matches: List[Tuple[int, int]], matches_percent: float = 0.50) -> List[
-        Tuple[int, int]]:
+    def __choose_matches(matrix: np.ndarray, matches: List[Tuple[int, int]], matches_percent: float = 0.50) -> List[Tuple[int, int]]:
         matches_weights = [(matches[i], matrix[(matches[i])[0]][(matches[i])[1]]) for i in range(len(matches))]
         matches_weights.sort(key=lambda tup: tup[1], reverse=True)
         number_of_matches = len(matches_weights)
@@ -74,8 +73,7 @@ class MaxWeightCluster:
                     if len(clusters[i]) + len(clusters[j]) > cluster_size:
                         curr_matrix[i][j] = 0
                         curr_matrix[j][i] = 0
-        LocalSearchCluster.local_search_clustering(matrix=matrix, initial_clustering=clusters,
-                                                   cluster_size=cluster_size)
+        clusters = LocalSearchCluster.local_search_clustering(matrix=matrix, initial_clustering=clusters, cluster_size=cluster_size)
         return clusters
 
 
