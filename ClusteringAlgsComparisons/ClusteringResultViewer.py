@@ -64,7 +64,7 @@ def show_2_results_of_matrix(matrix, clusters_a, clusters_b, test_description_a=
 
 
 def get_diff(row, field, df):
-    diff = row[field] - df[df['matrix_id'] == row['matrix_id']][field].values[0]
+    diff = row[field] - df[(df['matrix_id'] == row['matrix_id']) & (df['cluster_size'] == row['cluster_size'])][field].values[0]
     return diff
 
 
@@ -182,18 +182,26 @@ class ClusteringResultViewer:
         # show test results of algo_a and algo_b where the difference in field was between min_diff to max_diff
         # difference = algo_a.field - algo_b.field
 
+        # get dfs of both algorithms tests
         df = self.results_df.copy()
         df_algo_a = df[df['algorithm'] == algo_a]
         df_algo_b = df[df['algorithm'] == algo_b]
 
+        # calculate diff and filter by min and max diff
         df_algo_a['diff'] = df_algo_a.apply(lambda row: get_diff(row, field, df_algo_b), axis=1)
         df_algo_a = df_algo_a[(df_algo_a['diff'] >= min_diff) & (df_algo_a['diff'] <= max_diff)]
+
+        # get tests indices
         algo_a_idx = df_algo_a.sample(1).index[0]
         algo_b_idx = df_algo_b[df_algo_b['matrix_id'] == df_algo_a.loc[algo_a_idx]['matrix_id']].index[0]
-        matrix = self.get_matrix(self.results_df.iloc[df_algo_a.sample(1).index[0]]['matrix_id'])
+
+        # get matrix and tests results (and ready textual description)
+        matrix = self.get_matrix(self.results_df.iloc[algo_a_idx]['matrix_id'])
         clusters_a = self.get_clusters_list(algo_a_idx)
         clusters_b = self.get_clusters_list(algo_b_idx)
         test_description_a = self.get_test_description(algo_a_idx)
         test_description_b = self.get_test_description(algo_b_idx)
+
+        # show results side-by-side
         show_2_results_of_matrix(matrix, clusters_a, clusters_b, test_description_a, test_description_b)
 

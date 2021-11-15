@@ -226,6 +226,7 @@ if __name__ == '__main__':
 
         while True:
             # Visualize random result by conditions
+            print('Press any key for next figure:')
             wait_for = input()
             # crv.show_random_single_result_by(algorithms               = ['MaxWeight'],
             #                                  agents_num               = [36],    # [24, 36, 48]
@@ -236,7 +237,7 @@ if __name__ == '__main__':
             #                                  min_time_delta_seconds   = 0.0)             # [0 1]
             crv.show_result_by_difference(algo_a='MaxWeight',
                                           algo_b='GreedyLoop',
-                                          min_diff=0.05,
+                                          min_diff=0.10,
                                           max_diff=1.0,
                                           field='dataLoss_percentage')
 
