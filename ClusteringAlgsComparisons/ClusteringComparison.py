@@ -75,9 +75,9 @@ class ClusteringComparator:
     def create_scatter_based_matrix(self) -> np.ndarray:
         return ScatterBasedMatrix.generate_scatter_based_matrix(
             agents_num                  = self.agents_num,
-            map_size                    = ScatterBasedMatrix.MapShape(random.choice([50, 100, 150]), random.choice([50, 100, 150])),
-            fractal_growth_probability  = random.choice([0.3, 0.5, 0.7]),
-            fractal_deviation           = random.choice([0.5, 1, 2]),
+            map_size                    = tuple(np.full(self.agents_num, random.randint(50, 150))),
+            fractal_growth_probability  = np.random.uniform(0.3, 0.7),
+            fractal_deviation           = np.random.uniform(0.5, 2),
             cost_function               = ScatterBasedMatrix.negative_exponential_distance)
 
     def reduce_matrix(self, block_matrix: np.ndarray, lp_norm: float = 1.0) -> np.ndarray:
@@ -138,8 +138,9 @@ class ClusteringComparator:
                                       result.dataIn_percentage[test_iter],
                                       clusters], index=self.res_df.columns)
                 self.res_df = self.res_df.append(iter_res, ignore_index=True)
-                print("cluster_len: {0}, fitness: {1}".format(str([len(c) for c in clusters]),
-                                                              result.dataIn_percentage[test_iter]))
+                print(f"cluster_len: {str([len(c) for c in clusters])}, "
+                      f"fitness: {result.dataIn_percentage[test_iter] * 100:.2f}%, "
+                      f"time: {result.time_delta[test_iter]:.2f}s")
 
     @staticmethod
     def __create_figure(name: str, num: int):
