@@ -73,9 +73,18 @@ class ClusteringComparator:
                                                                     remainder=remainder)
 
     def create_scatter_based_matrix(self) -> np.ndarray:
+        r = random.randint(50, 150)
+
+        # # for N-Dims scatter map
+        # n = self.agents_num
+        # r_effective = r / (n ** 0.85)
+
+        n = 2
+        r_effective = r
+        map_shape = tuple(np.full(n, r_effective))
         return ScatterBasedMatrix.generate_scatter_based_matrix(
             agents_num                  = self.agents_num,
-            map_size                    = tuple(np.full(self.agents_num, random.randint(50, 150))),
+            map_size                    = map_shape,
             fractal_growth_probability  = np.random.uniform(0.3, 0.7),
             fractal_deviation           = np.random.uniform(0.5, 2),
             cost_function               = ScatterBasedMatrix.negative_exponential_distance)
