@@ -1,5 +1,6 @@
 from typing import List, Set, Tuple
 import math
+import time
 import numpy as np
 import networkx as nx
 
@@ -63,6 +64,8 @@ class MaxWeightCluster:
     def cluster(matrix: np.ndarray, cluster_size: int) -> List[Set[int]]:
         curr_matrix = matrix.copy()
         clusters = [{i} for i in range(curr_matrix.shape[0])]
+        start = time.time()
+        max_time_delta = 4  # seconds
         while True:
             clusters, matches, cluster_was_successful = MaxWeightCluster.cluster_once(clusters, curr_matrix)
             if not cluster_was_successful:
@@ -73,7 +76,11 @@ class MaxWeightCluster:
                     if len(clusters[i]) + len(clusters[j]) > cluster_size:
                         curr_matrix[i][j] = 0
                         curr_matrix[j][i] = 0
-        clusters = LocalSearchCluster.local_search_clustering(matrix=matrix, initial_clustering=clusters, cluster_size=cluster_size)
+        clusters = LocalSearchCluster.local_search_clustering(matrix=matrix,
+                                                              initial_clustering=clusters,
+                                                              cluster_size=cluster_size,
+                                                              start_time=start,
+                                                              max_time_delta=max_time_delta)
         return clusters
 
 

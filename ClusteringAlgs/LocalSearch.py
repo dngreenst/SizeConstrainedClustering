@@ -1,4 +1,5 @@
 import copy
+import time
 from typing import Optional, List, Set, Tuple, Dict
 
 import numpy as np
@@ -11,7 +12,9 @@ class LocalSearchCluster:
     @staticmethod
     def local_search_clustering(matrix: np.ndarray,
                                 cluster_size: int,
-                                initial_clustering: Optional[List[Set[int]]]) -> List[Set[int]]:
+                                initial_clustering: Optional[List[Set[int]]],
+                                start_time: float = np.inf,
+                                max_time_delta: float = np.inf) -> List[Set[int]]:
         agents_num = matrix.shape[0]
 
         if initial_clustering is None:
@@ -31,7 +34,7 @@ class LocalSearchCluster:
 
         clustering_might_be_improvable = True
 
-        while clustering_might_be_improvable:
+        while clustering_might_be_improvable and (time.time() - start_time) < max_time_delta:
             clustering_might_be_improvable = False
 
             for first_agent_index in range(agents_num):

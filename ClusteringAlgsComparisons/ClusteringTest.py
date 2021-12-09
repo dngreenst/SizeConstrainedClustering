@@ -219,20 +219,26 @@ if __name__ == '__main__':
 
     else:
         # Visualize results
-        results_csv_name = os.path.join('output', 'results_50_tests_2021_10_31-01:27:33_PM.csv')
+        results_csv_name = os.path.join('output', 'results_20_tests_2021_11_24-12:59:21_PM.csv')
         results_df = pd.read_csv(results_csv_name).drop(columns=['Unnamed: 0'])
         matrices_dir = os.path.join('output', 'matrices' + results_csv_name.split('results')[1].split('.csv')[0])
         crv = ClusteringResultViewer(results_df=results_df, matrices_dir=matrices_dir)
 
         while True:
             # Visualize random result by conditions
+            print('Press any key for next figure:')
             wait_for = input()
-            crv.show_random_single_result_by(algorithms               = ['MaxWeight'],
-                                             agents_num               = [96],    # [24, 36, 48]
-                                             cluster_size             = [15, 16],        # [4, 8, 16]
-                                             max_data_loss_percentage = 1.0,             # [0 1]
-                                             min_data_loss_percentage = 0.1,             # [0 1]
-                                             max_time_delta_seconds   = 30.0,            # [0 1]
-                                             min_time_delta_seconds   = 1.0)             # [0 1]
+            # crv.show_random_single_result_by(algorithms               = ['MaxWeight'],
+            #                                  agents_num               = [36, 48, 96],    # [24, 36, 48]
+            #                                  cluster_size             = [7, 8, 15, 16],        # [4, 8, 16]
+            #                                  max_data_loss_percentage = 1.0,             # [0 1]
+            #                                  min_data_loss_percentage = 0.0,             # [0 1]
+            #                                  max_time_delta_seconds   = 30.0,            # [0 1]
+            #                                  min_time_delta_seconds   = 0.0)             # [0 1]
+            crv.show_result_by_difference(algo_a='MaxWeight',
+                                          algo_b='GreedyLoop',
+                                          min_diff=0.1,
+                                          max_diff=1.0,
+                                          field='dataLoss_percentage')
 
     print("Done")
